@@ -1,0 +1,240 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0b3d0b;
+    margin: 0;
+    padding: 10px;
+    color: white;
+    width: 400px;
+    height: 600px;
+    box-sizing: border-box;
+}
+
+#game {
+    max-width: 100%;
+    background-color: #134e13;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    padding: 12px;
+}
+
+.betButton img {
+    height: 48px;
+    width: 48px;
+    cursor: pointer;
+    border-radius: 50%;
+    background-color: #1a601a;
+    padding: 4px;
+    box-sizing: border-box;
+    transition: transform 0.2s ease;
+}
+
+.betButton img:hover {
+    transform: scale(1.1);
+}
+
+.betButton {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.cards {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.card-wrapper {
+    perspective: 600px;
+    width: 32px;
+    height: 42px;
+}
+
+.card-flip {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s ease;
+}
+
+.card-front,
+.card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    border: 1px solid black;
+    border-radius: 6px;
+    background-color: #f8f4e3;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.card-front {
+    background-color: #3f0404;
+    /* card back */
+}
+
+.card-back {
+    transform: rotateY(180deg);
+    color: rgb(57, 9, 7);
+}
+
+.card-flip.flipped {
+    transform: rotateY(180deg);
+}
+
+.player-info {
+    text-align: center;
+    font-size: 12px;
+}
+
+#row2,
+#row4 {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+#row1,
+#row3,
+#row5 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#communityCards {
+    background-color: #0c3a0c;
+    padding: 6px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #f2f2f2;
+}
+
+#row6 {
+    margin-top: 20px;
+    text-align: center;
+}
+
+#row6 button,
+#userActions button {
+    background-color: #ffcf57;
+    border: none;
+    border-radius: 6px;
+    color: #333;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 8px 14px;
+    margin: 4px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    width: 45%;
+    /* 🔥 make them wide */
+    box-sizing: border-box;
+    /* 🔥 prevent overflow */
+}
+
+#row6 button:hover,
+#userActions button:hover {
+    background-color: #ffd978;
+}
+
+#userActions {
+    margin-top: 10px;
+    display: none;
+    text-align: center;
+    /* 🔥 center the buttons */
+}
+
+#log {
+    text-align: center;
+    margin-top: 20px;
+    white-space: pre-line;
+    font-size: 12px;
+    background-color: #164116;
+    padding: 8px;
+    border-radius: 8px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.image-bet-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+}
+
+.image-bet-button img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.regular-bet-button {
+    background-color: #ffcf57;
+    border: none;
+    border-radius: 6px;
+    color: #333;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.regular-bet-button:hover {
+    background-color: #ffd978;
+}
+
+.betButton {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+.betButton img {
+    height: 48px;
+    width: 48px;
+    border-radius: 50%;
+    background-color: #1a601a;
+    padding: 4px;
+    box-sizing: border-box;
+    transition: transform 0.2s ease;
+}
+
+.betButton img:hover {
+    transform: scale(1.1);
+    /* 🔥 pop effect */
+}
+
+#tableStats {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    /* 🔥 closer together */
+    margin-bottom: -4px;
+    /* 🔥 nudges it lower toward the cards */
+    font-weight: bold;
+    color: #ffcf57;
+    font-size: 13px;
+    /* 🔥 smaller size */
+    line-height: 1.2;
+}

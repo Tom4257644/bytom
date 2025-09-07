@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Arithmetic Challenge</title>
+    <!-- Bootstrap CSS -->
+
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            width: 400px;
+            height: 200px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+        <br>
+        <br>
+        <h1>Mental Arithmetic Challenge</h1>
+
+
+
+        <select id="levelSelect" class="form-select form-select-lg mb-3" aria-label="Large select example">
+            <option selected value="1">Primary</option>
+            <option value="2">Secondary</option>
+            <option value="3">Quant</option>
+        </select>
+
+
+
+
+        <h2 id="timer">30s</h2>
+        <h2 id="question">Loading...</h2>
+        <h2 id="correctAnswer">Correct Answer: </h2>
+        <div class="form-group">
+            <input type="number" step="0.01" class="form-control" id="answer" placeholder="Your answer">
+        </div>
+        <button class="btn btn-secondary" id="submitBtn" onclick="checkAnswer()">Submit</button>
+        <br>
+        <br>
+        <h2 id="score">Score: 0</h2>
+        <h4 id="average-time">Average Time: 0s</h4>
+        <h4 id="high-score">High Score: 0</h4>
+        <h4 id="high-score-average">Average Time for High Score: 0s</h4>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,71 @@
+<!-- index.html - homepage with 4 game links -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games by Tom</title>
+    <style>
+        :root {
+            --bg: #2f7f56;
+            --card: #fff;
+            --radius: 22px;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 28px 0 14px;
+            font-size: 42px;
+            letter-spacing: .5px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 28px;
+            padding: 18px 28px 42px;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, .15);
+        }
+
+        .label {
+            background: black;
+            color: white;
+            font-weight: bold;
+            padding: 10px 18px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Games By Tom</h1>
+    <div class="grid">
+        <a class="card" href="play.html?g=poker"><span class="label">POKER</span></a>
+        <a class="card" href="play.html?g=blackjack"><span class="label">BLACKJACK</span></a>
+        <a class="card" href="play.html?g=roulette"><span class="label">ROULETTE</span></a>
+        <a class="card" href="play.html?g=mac"><span class="label">MAC</span></a>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Poker By Tom</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+
+    </style>
+</head>
+
+<body>
+
+    <div id="game">
+        <div class="row" id="rowForGameHeader" style="text-align: center;">
+            <h1>Poker by Tom</h1>
+        </div>
+
+        <div id="row1">
+            <div id="player3" class="player">
+                <div class="cards">
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="player-info">
+                    <strong>PLAYER 3</strong>
+                    <div class="action" id="action-player3"></div>
+                    <div class="bet" id="bet-player3"></div>
+                    <div class="wallet" id="wallet-player3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="row2">
+            <div id="player2" class="player">
+                <div class="cards">
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="player-info">
+                    <strong>PLAYER 2</strong>
+                    <div class="action" id="action-player2"></div>
+                    <div class="bet" id="bet-player2"></div>
+                    <div class="wallet" id="wallet-player2" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div id="player4" class="player">
+                <div class="cards">
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="player-info">
+                    <strong>PLAYER 4</strong>
+                    <div class="action" id="action-player4"></div>
+                    <div class="bet" id="bet-player4"></div>
+                    <div class="wallet" id="wallet-player4" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tableStats" class="row">
+            <div id="potTracker">Pot: $0</div>
+            <div id="currentBetTracker">Current Bet: $0</div>
+        </div>
+
+
+        <div id="row3">
+            <div id="communityCards"
+                style="display: flex; justify-content: center; gap: 10px; margin: 20px auto 0 auto; width: fit-content;">
+                <div class="card-wrapper" id="comm0">
+                    <div class="card-flip">
+                        <div class="card-front"></div>
+                        <div class="card-back"></div>
+                    </div>
+                </div>
+                <div class="card-wrapper" id="comm1">
+                    <div class="card-flip">
+                        <div class="card-front"></div>
+                        <div class="card-back"></div>
+                    </div>
+                </div>
+                <div class="card-wrapper" id="comm2">
+                    <div class="card-flip">
+                        <div class="card-front"></div>
+                        <div class="card-back"></div>
+                    </div>
+                </div>
+                <div class="card-wrapper" id="comm3">
+                    <div class="card-flip">
+                        <div class="card-front"></div>
+                        <div class="card-back"></div>
+                    </div>
+                </div>
+                <div class="card-wrapper" id="comm4">
+                    <div class="card-flip">
+                        <div class="card-front"></div>
+                        <div class="card-back"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="row4">
+            <div id="player1" class="player">
+                <div class="cards">
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="player-info">
+                    <strong>PLAYER 1</strong>
+                    <div class="action" id="action-player1"></div>
+                    <div class="bet" id="bet-player1"></div>
+                    <div class="wallet" id="wallet-player1" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div id="player5" class="player">
+                <div class="cards">
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="player-info">
+                    <strong>PLAYER 5</strong>
+                    <div class="action" id="action-player5"></div>
+                    <div class="bet" id="bet-player5"></div>
+                    <div class="wallet" id="wallet-player5" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="row5">
+            <div id="userPlayer" class="player">
+                <div class="cards">
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                    <div class="card-wrapper">
+                        <div class="card-flip">
+                            <div class="card-front"></div>
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="player-info">
+                    <strong>YOU</strong>
+                    <div class="action" id="action-userPlayer"></div>
+                    <div class="bet" id="bet-userPlayer"></div>
+                    <div class="wallet" id="wallet-userPlayer" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="row6">
+            <button id="startGameButton">Deal Cards</button>
+        </div>
+
+        <div id="userActions">
+            <button id="checkButton">Check</button>
+            <button id="callButton">Call</button>
+            <button id="raiseButton">Raise</button>
+            <button id="foldButton">Fold</button>
+        </div>
+
+        <div id="totalBet"
+            style="text-align: center; font-weight: bold; font-size: 14px; margin-top: 8px; background-color: #164116; padding: 6px; border-radius: 6px;">
+            Total Bet: $0</div>
+
+        <div id="buttonsForBets"
+            style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 12px;">
+            <div style="display: flex; justify-content: center; gap: 12px; ">
+                <button id="betButton1" class="betButton"><img src="assets/1.png" alt="+1"></button>
+                <button id="betButton10" class="betButton"><img src="assets/10.png" alt="+10"></button>
+                <button id="betButton50" class="betButton"><img src="assets/50.png" alt="+50"></button>
+                <button id="betButton100" class="betButton"><img src="assets/100.png" alt="+100"></button>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 5px;">
+                <button id="confirmBetButton" class="regular-bet-button">Confirm Bet</button>
+                <button id="cancelBetButton" class="regular-bet-button">Cancel Bet</button>
+            </div>
+        </div>
+
+
+
+
+
+
+        <div id="log" style="color: #ffcf57;"></div>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

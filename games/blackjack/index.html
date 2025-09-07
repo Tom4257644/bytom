@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blackjack</title>
+
+    <style>
+        .card-wrapper {
+            perspective: 600px;
+            width: 32px;
+            height: 42px;
+            margin: 2px;
+        }
+
+        .card-flip {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease;
+        }
+
+        .card-flip.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front,
+        .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            color: rgb(255, 8, 8);
+            ;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            border: 1px solid black;
+            border-radius: 6px;
+            background-color: #f8f4e3;
+            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-front {
+            background-color: #3f0404;
+            /* card back */
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            color: rgb(165, 0, 0);
+        }
+
+
+        #totalMoney,
+        #totalBet {
+            text-align: center;
+        }
+
+        .space-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+
+        #buttonRow {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 14px;
+        }
+
+        .button-single,
+        .button-double {
+            background-color: #ffcf57;
+            border: none;
+            border-radius: 6px;
+            color: #333;
+            font-weight: bold;
+            font-size: 12px;
+            padding: 8px 14px;
+            text-align: center;
+            transition: background 0.3s ease;
+            cursor: pointer;
+        }
+
+        .button-single:hover,
+        .button-double:hover {
+            background-color: #ffd978;
+        }
+
+        .button-single {
+            width: 100%;
+        }
+
+        .button-double {
+            flex: 1;
+        }
+
+
+        #cancelBetButton.invisible {
+            visibility: hidden;
+        }
+
+
+        .cardStyle {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f4e3;
+            border: 1px solid #000;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            width: 32px;
+            height: 42px;
+            text-align: center;
+            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
+            margin: 2px;
+            color: red;
+        }
+
+
+
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b3d0b;
+            margin: 0;
+            padding: 10px;
+            color: white;
+            width: 400px;
+            height: 545px;
+            box-sizing: border-box;
+        }
+
+        #divForBlackjackGame {
+            max-width: 100%;
+            background-color: #134e13;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+            padding: 12px;
+        }
+
+        h1 {
+            font-size: 20px;
+            text-align: center;
+            margin: 8px 0 16px 0;
+            color: #f2f2f2;
+        }
+
+        .row {
+            margin-bottom: 10px;
+        }
+
+        .cardsBackground {
+            background-color: #0c3a0c;
+            padding: 6px;
+            display: flex;
+            gap: 6px;
+            border-radius: 8px;
+            min-height: 40px;
+        }
+
+        .infoBox {
+            background-color: #1f5e1f;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .h2 {
+            margin: 0;
+            font-size: 13px;
+        }
+
+        #dealerResult,
+        #playerResult {
+            font-style: italic;
+            font-size: 11px;
+        }
+
+        .pageButtons {
+            background-color: #ffcf57;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            color: #333;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            text-align: center;
+        }
+
+        .pageButtons:hover {
+            background-color: #ffd978;
+        }
+
+        #buttonRow {
+            margin-top: 14px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .betButton img {
+            height: 48px;
+            width: 48px;
+            cursor: pointer;
+            border-radius: 50%;
+            background-color: #1a601a;
+            padding: 4px;
+            box-sizing: border-box;
+            transition: transform 0.2s ease;
+        }
+
+        .betButton img:hover {
+            transform: scale(1.08);
+        }
+
+        #totalMoney,
+        #totalBet {
+            background-color: #164116;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        #buttonsForBets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        #cancelBetButton {
+            padding: 8px 14px;
+            margin-top: 6px;
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+        }
+
+        .totalMoneyPadding {
+            padding: 4px 0;
+        }
+
+        #rowForDealerCards,
+        #rowForPlayerCards {
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background" id="divForBlackjackGame">
+        <div class="row" id="rowForGameHeader">
+            <h1>Blackjack by Tom</h1>
+        </div>
+
+        <!-- Dealer Section -->
+        <div class="row" id="dealerRow">
+            <div class="infoBox" id="dealerInfo">
+                <div class="infoBox row space-between" id="dealerInfo">
+                    <span>Dealer's Cards</span>
+                    <span id="dealerTotalText">Total: 0</span>
+                </div>
+                <p id="dealerResult"></p>
+            </div>
+            <div id="rowForDealerCards" class="cardsBackground row"></div>
+        </div>
+
+        <!-- Player Section -->
+        <div class="row" id="playerRow">
+            <div class="infoBox" id="playerInfo">
+                <div class="infoBox row space-between" id="playerInfo">
+                    <span>Player's Cards</span>
+                    <span id="playerTotalText">Total: 0</span>
+                </div>
+                <p id="playerResult"></p>
+            </div>
+            <div id="rowForPlayerCards" class="cardsBackground row"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row" id="buttonRow">
+            <span id="dealButton" class="pageButtons">Deal</span>
+            <!-- Add more like Hit/Stand here if needed -->
+        </div>
+
+        <!-- Betting Interface -->
+        <div class="row" id="bettingButtons">
+            <div id="totalMoney" class="row">
+                <span class="totalMoneyPadding">Total Money: $1000</span>
+            </div>
+
+            <div id="totalBet" class="row">Total Bet: 0
+            </div>
+
+            <div id="buttonsForBets" class="row">
+                <span id="betButton1" class="betButton"><img src="assets/a1.png" /></span>
+                <span id="betButton10" class="betButton"><img src="assets/a10.png" /></span>
+                <span id="betButton50" class="betButton"><img src="assets/a50.png" /></span>
+                <span id="betButton100" class="betButton"><img src="assets/a100.png" /></span>
+                <span id="cancelBetButton" class="pageButtons invisible">Cancel Bet</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="donationMessage"
+        style="text-align: center; margin-top: 12px; font-size: 12px; color: #ccc; display: none;">
+        <strong>Try my new games!</strong>
+        <br>
+        <a href="https://chromewebstore.google.com/detail/poker-by-tom/akikcgicmmcccghcmfchijfbfjgkbidn?hl=en&authuser=0"
+            target="_blank" style="color: #ffc107; text-decoration: none; display: block; margin-top: 6px;">
+            Poker by Tom
+        </a>
+        <a href="https://chromewebstore.google.com/detail/roulette-by-tom/dpgmgodmhgnfkfljkngjhapmecpbhicb?hl=en&authuser=0"
+            target="_blank" style="color: #ffc107; text-decoration: none; display: block; margin-top: 6px;">
+            Roulette by Tom
+        </a>
+    </div>
+
+
+
+
+    <script src="script.js"></script>
+</body>
+
+</html>
