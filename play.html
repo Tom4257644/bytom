@@ -17,7 +17,8 @@
     <style>
         body {
             margin: 0;
-            background: #0f172a;
+            background: #2f7f56;
+            /* same as index.html */
             color: #e5e7eb;
             font-family: Arial, sans-serif;
         }
@@ -27,28 +28,21 @@
             gap: 12px;
             align-items: center;
             padding: 10px 14px;
-            background: #111827;
+            background: #2f7f56;
+            /* updated to match body */
             position: sticky;
             top: 0;
         }
 
-        button,
         a.home {
             padding: 10px 14px;
             border-radius: 10px;
             border: 0;
             cursor: pointer;
-        }
-
-        button {
-            background: #2563eb;
-            color: #fff;
-        }
-
-        .home {
             background: #e5e7eb;
             color: #111827;
             text-decoration: none;
+            font-weight: bold;
         }
 
         #wrap {
@@ -70,7 +64,6 @@
 <body>
     <header>
         <a class="home" href="index.html">← Home</a>
-        <button id="fs">Fullscreen</button>
     </header>
 
     <div id="wrap">
@@ -82,13 +75,6 @@
         const slug = params.get('g');
         const frame = document.getElementById('game');
         frame.src = slug ? `games/${slug}/index.html` : 'index.html';
-
-        document.getElementById('fs').addEventListener('click', async () => {
-            try {
-                await document.documentElement.requestFullscreen();
-                gtag('event', 'fullscreen_clicked');
-            } catch (e) { }
-        });
     </script>
 </body>
 

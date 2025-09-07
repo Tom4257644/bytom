@@ -17,7 +17,6 @@
     <style>
         :root {
             --bg: #2f7f56;
-            --card: #fff;
             --radius: 22px;
         }
 
@@ -45,23 +44,48 @@
         }
 
         .card {
-            background: var(--card);
             border-radius: var(--radius);
             height: 220px;
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
             text-decoration: none;
             box-shadow: 0 8px 18px rgba(0, 0, 0, .15);
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, .3);
         }
 
         .label {
-            background: black;
+            background: rgba(0, 0, 0, 0.9);
             color: white;
             font-weight: bold;
             padding: 10px 18px;
             border-radius: 8px;
             letter-spacing: 1px;
+            margin-bottom: 14px;
+        }
+
+        /* Backgrounds from assets */
+        .poker {
+            background-image: url('assets/poker.png');
+        }
+
+        .blackjack {
+            background-image: url('assets/blackjack.png');
+        }
+
+        .roulette {
+            background-image: url('assets/roulette.png');
+        }
+
+        .mac {
+            background-image: url('assets/mac.png');
         }
     </style>
 </head>
@@ -69,10 +93,10 @@
 <body>
     <h1>Games By Tom</h1>
     <div class="grid">
-        <a class="card" href="play.html?g=poker"><span class="label">POKER</span></a>
-        <a class="card" href="play.html?g=blackjack"><span class="label">BLACKJACK</span></a>
-        <a class="card" href="play.html?g=roulette"><span class="label">ROULETTE</span></a>
-        <a class="card" href="play.html?g=mac"><span class="label">MAC</span></a>
+        <a class="card poker" href="play.html?g=poker"><span class="label">POKER</span></a>
+        <a class="card blackjack" href="play.html?g=blackjack"><span class="label">BLACKJACK</span></a>
+        <a class="card roulette" href="play.html?g=roulette"><span class="label">ROULETTE</span></a>
+        <a class="card mac" href="play.html?g=mac"><span class="label">MAC</span></a>
     </div>
 </body>
 
