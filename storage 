@@ -1,0 +1,27 @@
+<div style="text-align:center; user-select:none; font-family:'Poppins','Montserrat',sans-serif;">
+    <div style="
+    font-size:clamp(60px,12vw,140px);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    background:linear-gradient(135deg,#00eaff 0%,#ff00e6 50%,#8aff00 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    display:inline-block;
+    padding:0.2em 0;
+    text-shadow: 0 0 8px rgba(0,234,255,0.5),
+                 0 0 14px rgba(255,0,230,0.3);
+  ">
+        Arcade
+    </div>
+    <div style="
+    margin-top:0.4em;
+    font-size:clamp(14px,2vw,22px);
+    letter-spacing:0.3em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,0.85);
+    text-shadow: 0 0 6px rgba(0,234,255,0.3);
+  ">
+        by tom
+    </div>
+</div>

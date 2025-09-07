@@ -17,7 +17,7 @@
     <style>
         body {
             margin: 0;
-            background: #2f7f56;
+            background: #0b3d0b;
             /* same as index.html */
             color: #e5e7eb;
             font-family: Arial, sans-serif;
@@ -28,7 +28,7 @@
             gap: 12px;
             align-items: center;
             padding: 10px 14px;
-            background: #2f7f56;
+            background: #0b3d0b;
             /* updated to match body */
             position: sticky;
             top: 0;
@@ -58,6 +58,26 @@
             border-radius: 14px;
             background: #000;
         }
+
+        /* Footer styles */
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #ccc;
+            font-size: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        footer a {
+            color: #00eaff;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        footer a:hover {
+            color: #ff00e6;
+        }
     </style>
 </head>
 
@@ -69,6 +89,26 @@
     <div id="wrap">
         <iframe id="game" allowfullscreen referrerpolicy="no-referrer"></iframe>
     </div>
+
+
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <footer>
+        <p>© 2025 Arcade by Tom. All rights reserved.</p>
+        <nav>
+            <a href="contact.html">Contact Us</a> |
+            <a href="about.html">About Us</a> |
+            <a href="privacy.html">Privacy Policy</a> |
+            <a href="terms.html">Terms & Conditions</a> |
+            <a href="disclaimer.html">Disclaimer</a> |
+            <a href="submit.html">Submit Your Own</a>
+        </nav>
+    </footer>
 
     <script>
         const params = new URLSearchParams(location.search);

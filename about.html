@@ -1,0 +1,307 @@
+<!-- about.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About Us • Arcade by Tom</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <meta name="description" content="About Arcade by Tom">
+    <style>
+        :root {
+            --bg: #0b3d0b;
+            --muted: #cfd8dc;
+            --accent1: #00eaff;
+            --accent2: #ff00e6;
+            --accent3: #8aff00;
+            --radius: 22px;
+            --shadow: 0 10px 28px rgba(0, 0, 0, .35);
+            --maxw: 1000px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .hero {
+            text-align: center;
+            user-select: none;
+            padding: 48px 16px 18px;
+            font-family: 'Poppins', 'Montserrat', system-ui, Arial, sans-serif;
+        }
+
+        .logo {
+            font-size: clamp(36px, 9vw, 96px);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            background: linear-gradient(135deg, var(--accent1) 0%, var(--accent2) 50%, var(--accent3) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+            text-shadow: 0 0 8px rgba(0, 234, 255, .45), 0 0 14px rgba(255, 0, 230, .25);
+            margin: 0;
+        }
+
+        .subtitle {
+            margin-top: .4em;
+            font-size: clamp(12px, 1.8vw, 18px);
+            letter-spacing: .35em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .85);
+            text-shadow: 0 0 6px rgba(0, 234, 255, .25);
+        }
+
+        /* Container */
+        .wrap {
+            max-width: var(--maxw);
+            margin: 24px auto 36px;
+            padding: 0 18px 24px;
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: .5px;
+        }
+
+        .stamp {
+            font-size: 14px;
+            color: var(--muted);
+            opacity: .9;
+        }
+
+        .card-body {
+            padding: 8px 22px 22px;
+        }
+
+        p,
+        li {
+            color: #f3f6f7
+        }
+
+        /* Highlight block */
+        .note {
+            font-size: 14px;
+            color: #e6f0f2;
+            opacity: .95;
+            padding: 10px 12px;
+            border-left: 3px solid var(--accent1);
+            background: rgba(255, 255, 255, .04);
+            border-radius: 8px;
+            margin: 10px 0 0;
+        }
+
+        /* Extension grid */
+        .grid {
+            display: grid;
+            gap: 16px;
+            margin: 18px 0 6px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }
+
+        .ext {
+            background: rgba(0, 0, 0, .28);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 16px;
+            padding: 14px;
+            transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+        }
+
+        .ext:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .45);
+            border-color: rgba(255, 255, 255, .22);
+        }
+
+        .ext h3 {
+            margin: 6px 0 6px;
+            font-size: 18px;
+            letter-spacing: .3px;
+        }
+
+        .ext p {
+            margin: 0 0 12px;
+            color: #dfe8e9;
+            font-size: 14px
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 18px;
+            border-radius: 28px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            background: transparent;
+            color: var(--accent1);
+            border: 2px solid var(--accent1);
+            transition: all .25s ease;
+        }
+
+        .btn:hover {
+            background: var(--accent1);
+            color: #001014;
+            box-shadow: 0 0 12px var(--accent1), 0 0 20px rgba(0, 234, 255, .5);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 22px;
+            background: rgba(0, 0, 0, .7);
+            color: #ccc;
+            font-size: 14px;
+            border-top: 1px solid rgba(255, 255, 255, .1);
+        }
+
+        footer a {
+            color: var(--accent1);
+            text-decoration: none;
+            transition: color .2s ease;
+        }
+
+        footer a:hover {
+            color: var(--accent2)
+        }
+
+        a {
+            color: var(--accent1)
+        }
+    </style>
+</head>
+
+<body>
+    <header class="hero">
+        <h1 class="logo">Arcade</h1>
+        <div class="subtitle">by tom</div>
+    </header>
+
+    <main class="wrap">
+        <article class="card" role="article">
+            <div class="card-header">
+                <h1 class="card-title">About Us</h1>
+                <div class="stamp">Last updated: 8 September 2025 (NZ)</div>
+            </div>
+
+            <div class="card-body">
+                <h2 style="margin-top:6px">From Chrome Extensions to a Full Arcade</h2>
+                <p>
+                    Arcade by Tom started as a small collection of Google Chrome extensions, tiny experiments in
+                    building
+                    clean,
+                    fast, strategy-focused games you could play in a new tab. What began as a side project quickly grew
+                    into a
+                    library of simple, addictive experiences, each tuned for speed, clarity, and a little competitive
+                    edge.
+                </p>
+                <p>
+                    Today, Arcade by Tom brings those same games to the web, with the same principles: sharp gameplay,
+                    no clutter,
+                    and a neon-clean UI that feels great on desktop or mobile. We still support the original Chrome
+                    extensions,
+                    and you can find them below.
+                </p>
+
+                <h2 style="margin-top:18px">Find the Chrome Extensions</h2>
+                <div class="grid">
+
+                    <div class="ext">
+                        <h3>Poker by Tom</h3>
+                        <p>Practice decision-making and hand evaluation in a stripped-down poker sandbox.</p>
+                        <a class="btn"
+                            href="https://chromewebstore.google.com/detail/poker-by-tom/akikcgicmmcccghcmfchijfbfjgkbidn"
+                            target="_blank" rel="noopener">Chrome Store</a>
+                    </div>
+
+                    <div class="ext">
+                        <h3>Blackjack by Tom</h3>
+                        <p>Clean, fast blackjack with a focus on probabilities and replay speed.</p>
+                        <a class="btn"
+                            href="https://chromewebstore.google.com/detail/blackjack-by-tom/pmhlnhkpkibmmdnkknhdjhaeeolhhbfe"
+                            target="_blank" rel="noopener">Chrome Store</a>
+                    </div>
+                    <div class="ext">
+                        <h3>MAC - Mental Arithmetic Challenge</h3>
+                        <p>Sharpen your skills with rapid-fire arithmetic drills.</p>
+                        <a class="btn"
+                            href="https://chromewebstore.google.com/detail/mental-arithmetic-challen/kkfijllpelljnmcfgebmopacpakpaknb"
+                            target="_blank" rel="noopener">Chrome Store</a>
+                    </div>
+
+                    <div class="ext">
+                        <h3>Roulette by Tom</h3>
+                        <p>Spin, place, repeat. A minimalist roulette experience tuned for quick sessions.</p>
+                        <a class="btn"
+                            href="https://chromewebstore.google.com/detail/roulette-by-tom/dpgmgodmhgnfkfljkngjhapmecpbhicb"
+                            target="_blank" rel="noopener">Chrome Store</a>
+                    </div>
+
+                </div>
+
+                <h2 style="margin-top:18px">What’s Next</h2>
+                <p>
+                    We’re continuing to ship tweaks to gameplay, polish animations, and add new challenges. If you’ve
+                    got ideas
+                    or want to submit your own, we’d love to hear from you.
+                </p>
+
+                <div style="margin-top:14px">
+                    <a class="btn" href="submit.html">Submit Your Own</a>
+                    <a class="btn" style="margin-left:8px" href="contact.html">Contact Us</a><br><br>
+                    <button class="btn" href="index.html">← Return to Arcade</button>
+
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <p>© 2025 Arcade by Tom. All rights reserved.</p>
+        <nav>
+            <a href="contact.html">Contact Us</a> |
+            <a href="about.html">About Us</a> |
+            <a href="privacy.html">Privacy Policy</a> |
+            <a href="terms.html">Terms &amp; Conditions</a> |
+            <a href="disclaimer.html">Disclaimer</a> |
+            <a href="submit.html">Submit Your Own</a>
+        </nav>
+    </footer>
+</body>
+
+</html>

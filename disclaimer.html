@@ -1,0 +1,354 @@
+<!-- disclaimer.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Disclaimer • Arcade by Tom</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <meta name="description" content="Disclaimer for Arcade by Tom">
+    <style>
+        :root {
+            --bg: #0b3d0b;
+            --card: #0f4f10;
+            --muted: #cfd8dc;
+            --accent1: #00eaff;
+            --accent2: #ff00e6;
+            --accent3: #8aff00;
+            --radius: 22px;
+            --shadow: 0 10px 28px rgba(0, 0, 0, .35);
+            --maxw: 980px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        .hero {
+            text-align: center;
+            user-select: none;
+            padding: 48px 16px 18px;
+            font-family: 'Poppins', 'Montserrat', system-ui, Arial, sans-serif;
+        }
+
+        .logo {
+            font-size: clamp(36px, 9vw, 96px);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            background: linear-gradient(135deg, var(--accent1) 0%, var(--accent2) 50%, var(--accent3) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+            text-shadow: 0 0 8px rgba(0, 234, 255, .45), 0 0 14px rgba(255, 0, 230, .25);
+            margin: 0;
+        }
+
+        .subtitle {
+            margin-top: .4em;
+            font-size: clamp(12px, 1.8vw, 18px);
+            letter-spacing: .35em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .85);
+            text-shadow: 0 0 6px rgba(0, 234, 255, .25);
+        }
+
+        .wrap {
+            max-width: var(--maxw);
+            margin: 24px auto 36px;
+            padding: 0 18px 24px;
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: .5px;
+        }
+
+        .stamp {
+            font-size: 14px;
+            color: var(--muted);
+            opacity: .9;
+        }
+
+        .card-body {
+            padding: 8px 22px 22px;
+        }
+
+        .toc {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin: 12px 0 16px;
+            padding: 10px;
+            border-radius: 14px;
+            background: rgba(0, 0, 0, .25);
+            border: 1px solid rgba(255, 255, 255, .07);
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: var(--accent1);
+            padding: 8px 10px;
+            border-radius: 10px;
+            display: block;
+            transition: transform .15s ease, background .15s ease;
+        }
+
+        .toc a:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, .04)
+        }
+
+        section {
+            padding: 14px 0 8px;
+            border-top: 1px dashed rgba(255, 255, 255, .12);
+            scroll-margin-top: 80px;
+        }
+
+        section:first-of-type {
+            border-top: none
+        }
+
+        h2 {
+            font-size: 20px;
+            margin: 12px 0 8px;
+            letter-spacing: .3px;
+            text-shadow: 0 0 6px rgba(0, 234, 255, .25);
+        }
+
+        p,
+        li {
+            color: #f3f6f7
+        }
+
+        ul {
+            padding-left: 20px
+        }
+
+        .note {
+            font-size: 14px;
+            color: #e6f0f2;
+            opacity: .95;
+            padding: 10px 12px;
+            border-left: 3px solid var(--accent1);
+            background: rgba(255, 255, 255, .04);
+            border-radius: 8px;
+        }
+
+        .callout {
+            font-size: 14px;
+            background: rgba(0, 0, 0, .25);
+            border: 1px solid rgba(255, 255, 255, .1);
+            padding: 10px 12px;
+            border-radius: 10px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 16px 22px 22px;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            background: rgba(0, 0, 0, .2);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #001014;
+            background: linear-gradient(135deg, var(--accent3), var(--accent1));
+            font-weight: 600;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .45)
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--accent1);
+            border: 1px solid rgba(255, 255, 255, .18);
+        }
+
+        footer {
+            text-align: center;
+            padding: 22px;
+            background: rgba(0, 0, 0, .7);
+            color: #ccc;
+            font-size: 14px;
+            border-top: 1px solid rgba(255, 255, 255, .1);
+        }
+
+        footer a {
+            color: var(--accent1);
+            text-decoration: none;
+            transition: color .2s ease;
+        }
+
+        footer a:hover {
+            color: var(--accent2)
+        }
+
+        a {
+            color: var(--accent1)
+        }
+    </style>
+
+    <!-- Optional: structured data -->
+    <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebPage",
+    "name":"Arcade by Tom Disclaimer",
+    "url":"https://yourdomain.example/disclaimer.html",
+    "inLanguage":"en",
+    "about":{"@type":"Thing","name":"Disclaimer"},
+    "publisher":{"@type":"Organization","name":"Arcade by Tom"}
+  }
+  </script>
+</head>
+
+<body>
+    <header class="hero">
+        <h1 class="logo">Arcade</h1>
+        <div class="subtitle">by tom</div>
+    </header>
+
+    <main class="wrap">
+        <article class="card" role="article">
+            <div class="card-header">
+                <h1 class="card-title">Disclaimer</h1>
+                <div class="stamp">Last updated: 8 September 2025 (NZ)</div>
+            </div>
+
+            <div class="card-body">
+                <div class="note">
+                    This website and its games are provided for entertainment and general information only. Nothing on
+                    this site is financial, legal, medical, or other professional advice.
+                </div>
+
+                <nav class="toc" aria-label="Table of contents">
+                    <a href="#no-advice">No Advice</a>
+                    <a href="#fairness">Gameplay &amp; Fairness</a>
+                    <a href="#accuracy">Accuracy &amp; Availability</a>
+                    <a href="#third">Third-Party Links &amp; Content</a>
+                    <a href="#analytics">Cookies &amp; Analytics</a>
+                    <a href="#ip">Copyright &amp; Trademarks</a>
+                    <a href="#liability">No Warranties &amp; Limitation of Liability</a>
+                    <a href="#contact">Contact</a>
+                </nav>
+
+                <section id="no-advice">
+                    <h2>1) No Financial/Legal Advice</h2>
+                    <p>Any references to money, odds, markets, or strategies are illustrative only and may be simulated
+                        or simplified. Do not make real-world decisions based on game outcomes or site materials.</p>
+                </section>
+
+                <section id="fairness">
+                    <h2>2) Gameplay &amp; Fairness</h2>
+                    <p>We aim for enjoyable gameplay; however, we may adjust rules, features, or probabilities during
+                        testing and updates. Some aspects may be randomized or experimental.</p>
+                </section>
+
+                <section id="accuracy">
+                    <h2>3) Accuracy &amp; Availability</h2>
+                    <p>We try to keep information current and the site available, but we do not warrant accuracy,
+                        completeness, or uninterrupted access. Content may change without notice.</p>
+                </section>
+
+                <section id="third">
+                    <h2>4) Third-Party Links &amp; Content</h2>
+                    <p>Links to external sites are provided for convenience. We do not endorse and are not responsible
+                        for third-party content, policies, or practices.</p>
+                </section>
+
+                <section id="analytics">
+                    <h2>5) Cookies &amp; Analytics</h2>
+                    <p>We use cookies and Google Analytics (gtag.js) to understand aggregate usage. See our <a
+                            href="privacy.html">Privacy Policy</a> for details and controls.</p>
+                </section>
+
+                <section id="ip">
+                    <h2>6) Copyright &amp; Trademarks</h2>
+                    <p>All original game assets, code, and branding are owned by us or our licensors. If you believe
+                        content infringes your rights, contact us with details so we can review.</p>
+                    <div class="callout small">
+                        Include: your contact info, the exact URL(s), a description of the alleged infringement, and
+                        proof of ownership or authorization.
+                    </div>
+                </section>
+
+                <section id="liability">
+                    <h2>7) No Warranties &amp; Limitation of Liability</h2>
+                    <p>The site and games are provided “as is” and “as available” without warranties of any kind. To the
+                        maximum extent permitted by law, we shall not be liable for any indirect, incidental, special,
+                        consequential, or punitive damages, or loss of data, revenue, or profits arising from your use
+                        of the site or games.</p>
+                </section>
+
+                <section id="contact">
+                    <h2>8) Contact</h2>
+                    <p>Questions about this Disclaimer? Email <a
+                            href="mailto:tom.maclean2@gmail.com">tom.maclean2@gmail.com</a>.</p>
+                </section>
+            </div>
+
+            <div class="actions">
+                <a class="btn" href="index.html">← Back to Arcade</a>
+                <a class="btn btn-ghost" href="terms.html">Read Terms &amp; Conditions</a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <p>© 2025 Arcade by Tom. All rights reserved.</p>
+        <nav>
+            <a href="contact.html">Contact Us</a> |
+            <a href="about.html">About Us</a> |
+            <a href="privacy.html">Privacy Policy</a> |
+            <a href="terms.html">Terms &amp; Conditions</a> |
+            <a href="disclaimer.html">Disclaimer</a> |
+            <a href="submit.html">Submit Your Own</a>
+        </nav>
+    </footer>
+</body>
+
+</html>

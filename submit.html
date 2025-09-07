@@ -1,0 +1,411 @@
+<!-- submit.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Submit Your Own • Arcade by Tom</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <meta name="description" content="Suggest a game or submit your own to Arcade by Tom">
+    <style>
+        :root {
+            --bg: #0b3d0b;
+            --muted: #cfd8dc;
+            --accent1: #00eaff;
+            --accent2: #ff00e6;
+            --accent3: #8aff00;
+            --radius: 22px;
+            --shadow: 0 10px 28px rgba(0, 0, 0, .35);
+            --maxw: 980px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .hero {
+            text-align: center;
+            user-select: none;
+            padding: 48px 16px 18px;
+            font-family: 'Poppins', 'Montserrat', system-ui, Arial, sans-serif;
+        }
+
+        .logo {
+            font-size: clamp(36px, 9vw, 96px);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            background: linear-gradient(135deg, var(--accent1) 0%, var(--accent2) 50%, var(--accent3) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+            text-shadow: 0 0 8px rgba(0, 234, 255, .45), 0 0 14px rgba(255, 0, 230, .25);
+            margin: 0;
+        }
+
+        .subtitle {
+            margin-top: .4em;
+            font-size: clamp(12px, 1.8vw, 18px);
+            letter-spacing: .35em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .85);
+            text-shadow: 0 0 6px rgba(0, 234, 255, .25);
+        }
+
+        /* Container */
+        .wrap {
+            max-width: var(--maxw);
+            margin: 24px auto 36px;
+            padding: 0 18px 24px;
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: .5px;
+        }
+
+        .stamp {
+            font-size: 14px;
+            color: var(--muted);
+            opacity: .9;
+        }
+
+        .card-body {
+            padding: 8px 22px 22px;
+        }
+
+        p,
+        li {
+            color: #f3f6f7
+        }
+
+        /* Two columns for suggest vs submit (responsive) */
+        .cols {
+            display: grid;
+            gap: 16px;
+            margin: 14px 0 4px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .panel {
+            background: rgba(0, 0, 0, .28);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 16px;
+            padding: 14px;
+        }
+
+        /* Steps list */
+        .steps {
+            counter-reset: step
+        }
+
+        .steps li {
+            list-style: none;
+            position: relative;
+            padding-left: 36px;
+            margin: 10px 0;
+        }
+
+        .steps li::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 26px;
+            height: 26px;
+            line-height: 26px;
+            text-align: center;
+            border-radius: 50%;
+            border: 2px solid var(--accent1);
+            color: var(--accent1);
+        }
+
+        /* Form */
+        form {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #eaf2f3;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, .18);
+            background: rgba(0, 0, 0, .3);
+            color: #fff;
+            font-size: 15px;
+            transition: all .25s ease;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent1);
+            box-shadow: 0 0 10px var(--accent1), 0 0 20px rgba(0, 234, 255, .4);
+        }
+
+        .row {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        @media (max-width:640px) {
+            .row {
+                grid-template-columns: 1fr
+            }
+        }
+
+        /* Checkboxes */
+        .check {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            background: rgba(0, 0, 0, .22);
+            border: 1px solid rgba(255, 255, 255, .1);
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #eaf2f3;
+        }
+
+        .check input {
+            width: auto;
+            min-width: 18px;
+            margin-top: 3px
+        }
+
+        /* Button */
+        .btn {
+            display: inline-block;
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--accent1);
+            border: 2px solid var(--accent1);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            transition: all .25s ease;
+        }
+
+        .btn:hover {
+            background: var(--accent1);
+            color: #001014;
+            box-shadow: 0 0 12px var(--accent1), 0 0 22px rgba(0, 234, 255, .5);
+            transform: translateY(-2px);
+        }
+
+        .note {
+            font-size: 14px;
+            color: #e6f0f2;
+            opacity: .95;
+            padding: 10px 12px;
+            border-left: 3px solid var(--accent1);
+            background: rgba(255, 255, 255, .04);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 22px;
+            background: rgba(0, 0, 0, .7);
+            color: #ccc;
+            font-size: 14px;
+            border-top: 1px solid rgba(255, 255, 255, .1);
+        }
+
+        footer a {
+            color: var(--accent1);
+            text-decoration: none;
+            transition: color .2s ease;
+        }
+
+        footer a:hover {
+            color: var(--accent2)
+        }
+
+        a {
+            color: var(--accent1)
+        }
+    </style>
+</head>
+
+<body>
+    <header class="hero">
+        <h1 class="logo">Arcade</h1>
+        <div class="subtitle">by tom</div>
+    </header>
+
+    <main class="wrap">
+        <article class="card" role="article">
+            <div class="card-header">
+                <h1 class="card-title">Submit Your Own</h1>
+                <div class="stamp">Last updated: 8 September 2025 (NZ)</div>
+            </div>
+
+            <div class="card-body">
+                <div class="cols">
+                    <section class="panel">
+                        <h2>Suggest a Game</h2>
+                        <p>Got an idea you want to see built? Tell us your concept and why it’s fun or unique. No code
+                            needed — just your best pitch.</p>
+                        <ul class="steps">
+                            <li>Describe the core loop (what does the player do in 10–30 seconds?).</li>
+                            <li>Explain the challenge and how difficulty scales.</li>
+                            <li>Mention any inspirations or reference links.</li>
+                        </ul>
+                    </section>
+
+                    <section class="panel">
+                        <h2>Submit a Game (GitHub)</h2>
+                        <p>Already built something? Awesome. We accept public GitHub repos with a clean, minimal
+                            structure:</p>
+                        <ul>
+                            <li><code>index.html</code></li>
+                            <li><code>styles.css</code></li>
+                            <li><code>script.js</code></li>
+                            <li><code>assets/</code> (images, sounds, etc.)</li>
+                            <li><code>README.md</code> (how to play + any credits)</li>
+                            <li><strong>Nothing else</strong> — no build systems or extra folders, please.</li>
+                        </ul>
+                        <div class="note">Make the repository <strong>public</strong> and share the link via the form
+                            below.</div>
+                    </section>
+                </div>
+
+                <form action="mailto:tom.maclean2@gmail.com" method="POST" enctype="text/plain">
+                    <div class="row">
+                        <div>
+                            <label for="name">Your Name</label>
+                            <input id="name" name="name" type="text" required>
+                        </div>
+                        <div>
+                            <label for="email">Your Email</label>
+                            <input id="email" name="email" type="email" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="type">Are you suggesting or submitting?</label>
+                        <select id="type" name="type" required>
+                            <option value="" disabled selected>Select one…</option>
+                            <option value="suggestion">Suggestion (idea only)</option>
+                            <option value="submission">Submission (GitHub link)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="github">GitHub Repository URL (required for submissions)</label>
+                        <input id="github" name="github" type="url" placeholder="https://github.com/yourname/yourgame"
+                            pattern="https?://(www\.)?github\.com/.+" />
+                    </div>
+
+                    <div>
+                        <label for="desc">Description</label>
+                        <textarea id="desc" name="description"
+                            placeholder="Tell us about the idea or game. Controls, goals, difficulty, tech notes…"
+                            required></textarea>
+                    </div>
+
+                    <label class="check">
+                        <input type="checkbox" name="rights_confirm">
+                        <span>I confirm I have the rights to submit this content and it does not infringe others’
+                            IP.</span>
+                    </label>
+
+                    <label class="check">
+                        <input type="checkbox" name="structure_confirm">
+                        <span>If this is a submission, my repo contains exactly <code>index.html</code>,
+                            <code>styles.css</code>, <code>script.js</code>, an <code>assets/</code> folder, and
+                            <code>README.md</code>, and nothing else.</span>
+                    </label>
+
+                    <label class="check">
+                        <input type="checkbox" name="terms_confirm" required>
+                        <span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms &amp;
+                                Conditions</a> and acknowledge the <a href="disclaimer.html" target="_blank"
+                                rel="noopener">Disclaimer</a>.</span>
+                    </label>
+
+                    <div>
+                        <button type="submit" class="btn">Send</button>
+                        <button class="btn" href="index.html">← Return to Arcade</button>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <p>© 2025 Arcade by Tom. All rights reserved.</p>
+        <nav>
+            <a href="contact.html">Contact Us</a> |
+            <a href="about.html">About Us</a> |
+            <a href="privacy.html">Privacy Policy</a> |
+            <a href="terms.html">Terms &amp; Conditions</a> |
+            <a href="disclaimer.html">Disclaimer</a> |
+            <a href="submit.html">Submit Your Own</a>
+        </nav>
+    </footer>
+</body>
+
+</html>

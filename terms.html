@@ -1,0 +1,376 @@
+<!-- terms.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terms & Conditions • Arcade by Tom</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <meta name="description" content="Terms and Conditions for Arcade by Tom">
+    <style>
+        :root {
+            --bg: #0b3d0b;
+            --card: #0f4f10;
+            --muted: #cfd8dc;
+            --accent1: #00eaff;
+            --accent2: #ff00e6;
+            --accent3: #8aff00;
+            --radius: 22px;
+            --shadow: 0 10px 28px rgba(0, 0, 0, .35);
+            --maxw: 980px;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        .hero {
+            text-align: center;
+            user-select: none;
+            padding: 48px 16px 18px;
+            font-family: 'Poppins', 'Montserrat', system-ui, Arial, sans-serif;
+        }
+
+        .logo {
+            font-size: clamp(36px, 9vw, 96px);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            background: linear-gradient(135deg, var(--accent1) 0%, var(--accent2) 50%, var(--accent3) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+            text-shadow: 0 0 8px rgba(0, 234, 255, .45), 0 0 14px rgba(255, 0, 230, .25);
+            margin: 0;
+        }
+
+        .subtitle {
+            margin-top: .4em;
+            font-size: clamp(12px, 1.8vw, 18px);
+            letter-spacing: .35em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .85);
+            text-shadow: 0 0 6px rgba(0, 234, 255, .25);
+        }
+
+        .wrap {
+            max-width: var(--maxw);
+            margin: 24px auto 36px;
+            padding: 0 18px 24px;
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: .5px;
+        }
+
+        .stamp {
+            font-size: 14px;
+            color: var(--muted);
+            opacity: .9;
+        }
+
+        .card-body {
+            padding: 8px 22px 22px;
+        }
+
+        .toc {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin: 12px 0 16px;
+            padding: 10px;
+            border-radius: 14px;
+            background: rgba(0, 0, 0, .25);
+            border: 1px solid rgba(255, 255, 255, .07);
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: var(--accent1);
+            padding: 8px 10px;
+            border-radius: 10px;
+            display: block;
+            transition: transform .15s ease, background .15s ease;
+        }
+
+        .toc a:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, .04)
+        }
+
+        section {
+            padding: 14px 0 8px;
+            border-top: 1px dashed rgba(255, 255, 255, .12);
+            scroll-margin-top: 80px;
+        }
+
+        section:first-of-type {
+            border-top: none
+        }
+
+        h2 {
+            font-size: 20px;
+            margin: 12px 0 8px;
+            letter-spacing: .3px;
+            text-shadow: 0 0 6px rgba(0, 234, 255, .25);
+        }
+
+        p,
+        li {
+            color: #f3f6f7
+        }
+
+        ul {
+            padding-left: 20px
+        }
+
+        .note {
+            font-size: 14px;
+            color: #e6f0f2;
+            opacity: .95;
+            padding: 10px 12px;
+            border-left: 3px solid var(--accent1);
+            background: rgba(255, 255, 255, .04);
+            border-radius: 8px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 16px 22px 22px;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            background: rgba(0, 0, 0, .2);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #001014;
+            background: linear-gradient(135deg, var(--accent3), var(--accent1));
+            font-weight: 600;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .45)
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--accent1);
+            border: 1px solid rgba(255, 255, 255, .18);
+        }
+
+        footer {
+            text-align: center;
+            padding: 22px;
+            background: rgba(0, 0, 0, .7);
+            color: #ccc;
+            font-size: 14px;
+            border-top: 1px solid rgba(255, 255, 255, .1);
+        }
+
+        footer a {
+            color: var(--accent1);
+            text-decoration: none;
+            transition: color .2s ease;
+        }
+
+        footer a:hover {
+            color: var(--accent2)
+        }
+
+        a {
+            color: var(--accent1)
+        }
+    </style>
+
+    <!-- Optional: structured data -->
+    <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"TermsOfService",
+    "name":"Arcade by Tom Terms & Conditions",
+    "url":"https://yourdomain.example/terms.html",
+    "inLanguage":"en",
+    "publisher":{"@type":"Organization","name":"Arcade by Tom"}
+  }
+  </script>
+</head>
+
+<body>
+    <header class="hero">
+        <h1 class="logo">Arcade</h1>
+        <div class="subtitle">by tom</div>
+    </header>
+
+    <main class="wrap">
+        <article class="card" role="article">
+            <div class="card-header">
+                <h1 class="card-title">Terms &amp; Conditions</h1>
+                <div class="stamp">Last updated: 8 September 2025 (NZ)</div>
+            </div>
+
+            <div class="card-body">
+                <div class="note">These Terms govern your use of Arcade by Tom (“we”, “us”, “our”). By accessing or
+                    using our site or games, you agree to these Terms.</div>
+
+                <nav class="toc" aria-label="Table of contents">
+                    <a href="#use">Acceptable Use</a>
+                    <a href="#accounts">Accounts</a>
+                    <a href="#ip">Intellectual Property</a>
+                    <a href="#submissions">User Submissions</a>
+                    <a href="#analytics">Cookies & Analytics</a>
+                    <a href="#warranty">No Warranties</a>
+                    <a href="#liability">Limitation of Liability</a>
+                    <a href="#links">Third-Party Links</a>
+                    <a href="#termination">Termination</a>
+                    <a href="#law">Governing Law</a>
+                    <a href="#changes">Changes</a>
+                    <a href="#contact">Contact</a>
+                </nav>
+
+                <section id="use">
+                    <h2>1) Acceptable Use</h2>
+                    <ul>
+                        <li>Do not attempt to disrupt, overload, or reverse engineer the site or games.</li>
+                        <li>Do not upload or submit unlawful, infringing, or harmful content.</li>
+                        <li>Do not use the site to harass, spam, or violate others’ rights.</li>
+                        <li>Comply with applicable laws and these Terms at all times.</li>
+                    </ul>
+                </section>
+
+                <section id="accounts">
+                    <h2>2) Accounts</h2>
+                    <p>If any features require an account, you must provide accurate information and keep your
+                        credentials secure. You are responsible for activity under your account.</p>
+                </section>
+
+                <section id="ip">
+                    <h2>3) Intellectual Property</h2>
+                    <p>All content and materials (including games, graphics, logos, and code) are owned by us or our
+                        licensors and protected by applicable IP laws. You may not copy, modify, distribute, or create
+                        derivative works without our written consent, except as permitted by law.</p>
+                </section>
+
+                <section id="submissions">
+                    <h2>4) User Submissions (“Submit Your Own”)</h2>
+                    <ul>
+                        <li>You represent you have all rights to the content you submit.</li>
+                        <li>You grant us a non-exclusive, worldwide, royalty-free license to host, display, modify (for
+                            technical or editorial reasons), and distribute your submission in connection with the site
+                            and games.</li>
+                        <li>We may moderate or remove submissions at our discretion.</li>
+                    </ul>
+                </section>
+
+                <section id="analytics">
+                    <h2>5) Cookies &amp; Analytics</h2>
+                    <p>We use cookies and Google Analytics (gtag.js) to understand aggregate usage and improve the site.
+                        See our <a href="privacy.html">Privacy Policy</a> for details and opt-out options.</p>
+                </section>
+
+                <section id="warranty">
+                    <h2>6) No Warranties</h2>
+                    <p>The site and games are provided “as is” and “as available” without warranties of any kind,
+                        express or implied, including but not limited to merchantability, fitness for a particular
+                        purpose, and non-infringement. We do not guarantee uninterrupted or error-free operation.</p>
+                </section>
+
+                <section id="liability">
+                    <h2>7) Limitation of Liability</h2>
+                    <p>To the maximum extent permitted by law, we shall not be liable for indirect, incidental, special,
+                        consequential, or punitive damages, or any loss of profits, data, or goodwill arising from your
+                        use of the site or games. Our total liability shall not exceed NZD $100.</p>
+                </section>
+
+                <section id="links">
+                    <h2>8) Third-Party Links</h2>
+                    <p>We may link to third-party sites or resources. We are not responsible for their content,
+                        policies, or practices. Access at your own risk.</p>
+                </section>
+
+                <section id="termination">
+                    <h2>9) Termination</h2>
+                    <p>We may suspend or terminate access to the site or games at any time for any reason, including
+                        breach of these Terms.</p>
+                </section>
+
+                <section id="law">
+                    <h2>10) Governing Law</h2>
+                    <p>These Terms are governed by the laws of New Zealand. Where permitted, you agree to submit to the
+                        exclusive jurisdiction of the courts of New Zealand.</p>
+                </section>
+
+                <section id="changes">
+                    <h2>11) Changes to Terms</h2>
+                    <p>We may update these Terms from time to time. Changes take effect when posted on this page, with
+                        the “Last updated” date adjusted.</p>
+                </section>
+
+                <section id="contact">
+                    <h2>12) Contact</h2>
+                    <p>Questions? Email <a href="mailto:tom.maclean2@gmail.com">tom.maclean2@gmail.com</a>.</p>
+                </section>
+            </div>
+
+            <div class="actions">
+                <a class="btn" href="index.html">← Back to Arcade</a>
+                <a class="btn btn-ghost" href="privacy.html">View Privacy Policy</a>
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <p>© 2025 Arcade by Tom. All rights reserved.</p>
+        <nav>
+            <a href="contact.html">Contact Us</a> |
+            <a href="about.html">About Us</a> |
+            <a href="privacy.html">Privacy Policy</a> |
+            <a href="terms.html">Terms &amp; Conditions</a> |
+            <a href="disclaimer.html">Disclaimer</a> |
+            <a href="submit.html">Submit Your Own</a>
+        </nav>
+    </footer>
+</body>
+
+</html>
