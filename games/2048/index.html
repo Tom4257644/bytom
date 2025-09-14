@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>2048 Game</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="game-wrap">
+    <div class="top-row">
+      <div class="title">2048</div>
+      <div class="controls">
+        <div class="score-card">
+          <div class="label">SCORE</div>
+          <div class="val" id="score">0</div>
+        </div>
+        <div class="score-card">
+          <div class="label">BEST</div>
+          <div class="val" id="best">0</div>
+        </div>
+        <button id="newGameBtn" class="primary">New Game</button>
+      </div>
+    </div>
+
+    <div class="board-wrap" id="boardWrap">
+      <div id="grid">
+        <!-- Background cells -->
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <div id="tilesLayer" class="tiles-layer"></div>
+
+      <div id="winOverlay" class="overlay">
+        <h2>YOU WIN!</h2>
+        <div class="sub">Congratulations!</div>
+        <div class="actions">
+          <button id="continueBtn" class="primary">Continue</button>
+          <button id="restartFromWin" class="ghost">Restart</button>
+        </div>
+      </div>
+
+      <div id="gameOverOverlay" class="overlay">
+        <h2>Game Over!</h2>
+        <div class="sub">Try again!</div>
+        <div class="actions">
+          <button id="restartBtn" class="primary">Restart</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="help">
+      Click on window to play. Use WASD to move tiles.
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
