@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Farming Tycoon by Tom</title>
+    <style>
+        :root {
+            --page-bg: rgb(27, 60, 19);
+            --card: rgb(38, 77, 28);
+            --card2: rgb(38, 77, 28);
+            --ink: #0b1220;
+            --accent: #ffd24d;
+            --accent2: #ffb703;
+            --soil: #6b4e2e;
+            --soil2: #4a3720;
+            --radius: 14px;
+            --shadow: 0 8px 22px rgba(0, 0, 0, .12);
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: var(--page-bg);
+            color: var(--ink);
+            font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial
+        }
+
+        .hidden {
+            display: none !important
+        }
+
+        button {
+            cursor: pointer
+        }
+
+        /* Slightly narrower popup */
+
+
+        /* Top */
+        .top {
+            padding: 10px 14px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px
+        }
+
+        .brand {
+            color: #fff;
+            font-weight: 900;
+            font-size: 26px;
+            line-height: 1.05;
+            text-align: center
+        }
+
+        /* 2×2 grid + full-width third row — HALVED HEIGHT */
+        .topGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-auto-rows: 28px;
+            /* ~half of previous height */
+            gap: 8px;
+            width: 100%;
+            max-width: 680px;
+        }
+
+        .tile,
+        .btn {
+            background: #fff;
+            border: 1px solid rgba(0, 0, 0, .08);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            font-weight: 900;
+            font-size: 14px;
+            color: #0b1220;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            /* compact */
+            line-height: 1;
+        }
+
+        .statWrap {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .statValue {
+            min-width: 72px;
+            text-align: right;
+            font-variant-numeric: tabular-nums
+        }
+
+        .btn {
+            transition: background .15s, transform .06s
+        }
+
+        .btn:hover {
+            background: #f6f6f6
+        }
+
+        .btn:active {
+            transform: translateY(1px)
+        }
+
+        .btn--primary {
+            background: var(--accent);
+            border-color: var(--accent)
+        }
+
+        .btn--primary:hover {
+            background: var(--accent2)
+        }
+
+        .fullRow {
+            grid-column: 1/-1;
+            height: 32px
+        }
+
+        /* compact third row */
+
+        /* App shell */
+        .app {
+            margin: 10px 14px;
+            background: linear-gradient(var(--card), var(--card2));
+            border: 1px solid rgba(0, 0, 0, .08);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            min-height: 480px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 8px 8px 0
+        }
+
+        .tab {
+            border: 1px solid rgba(0, 0, 0, .12);
+            background: #fff;
+            padding: 6px 10px;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 14px
+        }
+
+        .tab.active {
+            background: #eefbf4;
+            border-color: #bde5bd
+        }
+
+        .panel-body {
+            padding: 10px;
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        /* Farm grid */
+        .farm {
+            position: relative;
+            min-height: 360px;
+            padding: 12px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            background: linear-gradient(#8fd18b 0 50%, #6fc06a 50%);
+            border: 1px solid rgba(0, 0, 0, .08);
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 10px;
+            transition: grid-template-columns .18s
+        }
+
+        .farm.one .content {
+            inset: 6% 5% 16% 5%;
+            gap: 8px
+        }
+
+        .farm.one .sprout {
+            font-size: 34px;
+            opacity: .75;
+            transform: scale(.96)
+        }
+
+        .farm.one .sprout.on {
+            opacity: 1;
+            transform: scale(1.16)
+        }
+
+        .farm.one .progress {
+            height: 10px
+        }
+
+        .plot {
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            background: repeating-linear-gradient(-8deg, var(--soil), var(--soil) 18px, var(--soil2) 18px, var(--soil2) 32px);
+            border-radius: 12px;
+            border: 2px solid rgba(0, 0, 0, .12);
+            box-shadow: inset 0 5px 12px rgba(0, 0, 0, .28)
+        }
+
+        .plot.owned {
+            cursor: pointer
+        }
+
+        .plot.locked {
+            filter: saturate(.9) brightness(.95);
+            opacity: .97;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-weight: 900;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, .55)
+        }
+
+        .meta {
+            position: absolute;
+            left: 8px;
+            top: 8px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            z-index: 3
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .95);
+            border: 1px solid rgba(0, 0, 0, .08);
+            font-size: 14px;
+            font-weight: 900
+        }
+
+        .progress {
+            position: absolute;
+            left: 8%;
+            right: 8%;
+            bottom: 10px;
+            height: 10px;
+            border-radius: 9px;
+            background: rgba(255, 255, 255, .6);
+            border: 1px solid rgba(0, 0, 0, .08);
+            overflow: hidden;
+            z-index: 3
+        }
+
+        .progress .fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            transition: width .12s linear
+        }
+
+        .content {
+            position: absolute;
+            inset: 16% 8% 20% 8%;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 5px;
+            z-index: 1
+        }
+
+        .sprout {
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            line-height: 1;
+            transform: scale(.84);
+            opacity: .35;
+            transition: transform .15s, opacity .15s
+        }
+
+        .sprout.on {
+            transform: scale(1);
+            opacity: 1
+        }
+
+        .stage-0 .sprout.on {
+            transform: scale(.9)
+        }
+
+        .stage-1 .sprout.on {
+            transform: scale(.98)
+        }
+
+        .stage-2 .sprout.on {
+            transform: scale(1.05)
+        }
+
+        .stage-3 .sprout.on {
+            transform: scale(1.1)
+        }
+
+        .stage-4 .sprout.on {
+            transform: scale(1.15)
+        }
+
+        .float {
+            position: absolute;
+            pointer-events: none;
+            font-weight: 900;
+            color: #0b5e32;
+            text-shadow: 0 2px 0 rgba(0, 0, 0, .25), 0 0 6px rgba(255, 255, 255, .75);
+            font-size: 40px;
+            animation: floatUp .9s ease-out forwards;
+            z-index: 5
+        }
+
+        @keyframes floatUp {
+            from {
+                transform: translateY(10px);
+                opacity: 1
+            }
+
+            to {
+                transform: translateY(-60px);
+                opacity: 0
+            }
+        }
+
+        .lock-price {
+            background: rgba(0, 0, 0, .45);
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, .25);
+            text-align: center
+        }
+
+        /* Lists */
+        .section-title {
+            text-align: center;
+            margin: 0;
+            color: #334155;
+            font-weight: 900
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        .item {
+            display: grid;
+            grid-template-columns: 48px 1fr auto;
+            gap: 10px;
+            align-items: center;
+            background: #fff;
+            border: 1px solid rgba(0, 0, 0, .08);
+            border-radius: 12px;
+            padding: 10px
+        }
+
+        .item .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            background: #f1f9ff;
+            font-size: 24px
+        }
+
+        .item .title {
+            font-weight: 900;
+            color: #0b1220
+        }
+
+        .item .title .sub {
+            color: #475569
+        }
+
+        .item .sub {
+            color: #64748b;
+            font-size: .96rem
+        }
+
+        .item button {
+            border: 1px solid rgba(0, 0, 0, .12);
+            background: #fff;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-weight: 900
+        }
+
+        .item button.afford {
+            background: #eefbf4;
+            border-color: #bde5bd
+        }
+
+        .item button:disabled {
+            opacity: .55;
+            filter: grayscale(.4);
+            cursor: not-allowed
+        }
+
+        .badge.locked {
+            background: #b91c1c;
+            color: #fff;
+            border-color: #7f1d1d
+        }
+
+        .money-tag.small {
+            background: #0f172a;
+            color: #fff;
+            border-radius: 999px;
+            padding: 2px 6px;
+            font-size: .78rem;
+            margin-right: 6px
+        }
+
+        /* Modals */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .45);
+            display: grid;
+            place-items: center;
+            z-index: 50
+        }
+
+        .modal {
+            width: min(600px, 92%);
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 0, 0, .1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, .32);
+            padding: 18px
+        }
+
+        .modal h2 {
+            margin: 0 0 6px 0
+        }
+
+        .modal p {
+            margin: 8px 0;
+            color: #374151
+        }
+
+        .modal ul {
+            margin: 6px 0 0 18px;
+            color: #374151
+        }
+
+        .modal .row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+            gap: 8px
+        }
+
+        .modal .primary {
+            border: none;
+            background: #16a34a;
+            color: #fff;
+            font-weight: 900;
+            padding: 10px 14px;
+            border-radius: 10px;
+            box-shadow: var(--shadow)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <section class="top" aria-label="Top controls">
+            <div class="brand">Farming Tycoon by Tom</div>
+            <div class="topGrid">
+                <div class="tile">
+                    <div class="statWrap"><span>Money</span><span id="money" class="statValue">0</span></div>
+                </div>
+                <div class="tile">
+                    <div class="statWrap"><span>Money/Sec:</span><span id="cps" class="statValue">0</span></div>
+                </div>
+                <button id="btnHowTo" class="btn">❓ How to Play</button>
+                <button id="btnReset" class="btn">↺ Reset</button>
+            </div>
+        </section>
+
+        <section class="app">
+            <div class="tabs">
+                <button class="tab active" data-tab="farm">Farm</button>
+                <button class="tab" data-tab="crops">Crops</button>
+                <button class="tab" data-tab="upgrades">Upgrades</button>
+            </div>
+
+            <div id="panel-farm" class="panel-body">
+                <div id="farm" class="farm"></div>
+            </div>
+            <div id="panel-crops" class="panel-body hidden">
+                <div id="list-crops" class="list"></div>
+            </div>
+            <div id="panel-upgrades" class="panel-body hidden">
+                <div id="list-upgrades" class="list"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals -->
+    <div id="intro" class="overlay hidden" role="dialog" aria-modal="true">
+        <div class="modal">
+            <h2>How to Play</h2>
+            <p><strong>Goal:</strong> Grow to 3×3 plots, unlock stronger crops, and upgrade gear to raise Coins/sec.
+                Earn money by clicking plots and on harvest.</p>
+            <p><strong>Locked things:</strong></p>
+            <ul>
+                <li>New plots appear locked after expanding. Click a locked tile and pay the price shown to unlock.</li>
+                <li>Upgrades with <em>Locked</em> need a milestone first (e.g., own more plots).</li>
+            </ul>
+            <p><strong>Assign crops:</strong> Crops tab → press <em>Assign</em> → click any owned plot in the Farm tab.
+            </p>
+            <div class="row"><button id="introOk" class="primary">Close</button></div>
+        </div>
+    </div>
+    <div id="assignHint" class="overlay hidden" role="alertdialog" aria-modal="true">
+        <div class="modal">
+            <h2>Assign Mode</h2>
+            <p id="assignText">Click a field on the Farm tab to assign.</p>
+            <div class="row"><button id="assignOk" class="primary">OK</button></div>
+        </div>
+    </div>
+
+    <!-- MV3 external JS -->
+    <script src="popup.js"></script>
+</body>
+
+</html>
