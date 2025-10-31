@@ -2,7 +2,7 @@
 const CONFIG = {
     version: 22,                      // bump for update
     autosaveMs: 100,
-    startMoney: 10000,
+    startMoney: 0,
     grid: { start: 1, max: 3, expandBase: 1200, expandScale: 2.25 },
     plotUnlock: { base: 300, scale: 1.35 },
 
@@ -17,13 +17,13 @@ const CONFIG = {
     // Cheaper upgrade prices (kept from last change)
     upgrades: [
         { key: 'tractor', title: 'Tractor', icon: '🚜', type: 'growth', step: 0.12, baseCost: 50, scale: 1.28, prereq: s => ownedCount() >= 1 },
+        { key: 'farmhands', title: 'Farmhands', icon: '🧑‍🌾', type: 'click', step: 0.2, baseCost: 10, scale: 1.3, prereq: s => ownedCount() >= 1 },
         { key: 'sprinkler', title: 'Sprinkler', icon: '💧', type: 'growth', step: 0.18, baseCost: 100, scale: 1.30, prereq: s => s.totalEarned >= 2000 },
         { key: 'barn', title: 'Barn', icon: '🏚️', type: 'harvest', step: 0.20, baseCost: 400, scale: 1.30, prereq: s => ownedCount() >= 2 },
         { key: 'fertilizer', title: 'Fertilizer', icon: '🧪', type: 'harvest', step: 0.15, baseCost: 220, scale: 1.28, prereq: s => s.totalEarned >= 1500 },
         { key: 'plow', title: 'Plow', icon: '🛠️', type: 'growth', step: 0.10, baseCost: 260, scale: 1.27, prereq: s => ownedCount() >= 1 },
         { key: 'greenhouse', title: 'Greenhouse', icon: '🏡', type: 'growth', step: 0.20, baseCost: 600, scale: 1.32, prereq: s => ownedCount() >= 3 || s.totalEarned >= 8000 },
         { key: 'composter', title: 'Composter', icon: '♻️', type: 'harvest', step: 0.12, baseCost: 400, scale: 1.29, prereq: s => s.totalEarned >= 4000 },
-        { key: 'farmhands', title: 'Farmhands', icon: '🧑‍🌾', type: 'click', step: 0.25, baseCost: 80, scale: 1.30, prereq: s => ownedCount() >= 2 },
     ],
 };
 
