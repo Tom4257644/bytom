@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mazes 2.0 BT — Web</title>
+    <style>
+        :root {
+            --bg: #1c4d26;
+            --panel: #1c4d26;
+            --accent: #53b3ff;
+            --accent2: #9cff57;
+            --text: #e8f0fe;
+            --muted: #9aa4b2;
+            --win: #ffd166;
+            --grid: #2b3340;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            overflow: hidden;
+            /* optional: prevent page scroll while playing */
+        }
+
+        #app {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--grid);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700
+        }
+
+        .title {
+            letter-spacing: .3px
+        }
+
+        .hud {
+            display: flex;
+            gap: 18px
+        }
+
+        .hud label {
+            display: block;
+            font-size: 11px;
+            color: var(--muted)
+        }
+
+        #timer,
+        #best {
+            font-variant-numeric: tabular-nums;
+            font-weight: 700
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgb(1, 21, 5);
+            border-bottom: 1px solid #23522f;
+        }
+
+        .btn,
+        .select {
+            background: #1c4d26;
+            color: var(--text);
+            border: 1px solid var(--grid);
+            padding: 6px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            border-color: var(--accent)
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            color: #0b0f15;
+            border-color: var(--accent)
+        }
+
+        .select {
+            appearance: none
+        }
+
+        .toggle {
+            font-size: 12px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .playfield {
+            flex: 1;
+            min-height: 0;
+            /* allow the canvas to truly flex */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        canvas {
+            display: block;
+            background: #1c4d26;
+            border: 1px solid #3a4556;
+            border-radius: 12px;
+            width: 100%;
+            height: 100%;
+            max-width: min(92vmin, 1100px);
+            /* responsive bounding box */
+            max-height: min(92vmin, 1100px);
+            outline: none;
+        }
+
+        .hint {
+            margin: 6px 12px 12px;
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, .45);
+            backdrop-filter: saturate(120%) blur(2px);
+        }
+
+        .modal.hidden {
+            display: none
+        }
+
+        .modal-card {
+            background: var(--panel);
+            color: var(--text);
+            border: 1px solid var(--grid);
+            border-radius: 14px;
+            padding: 16px;
+            width: min(560px, 90%);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
+        }
+
+        .modal-card h2 {
+            margin: 0 0 6px
+        }
+
+        .modal-card p {
+            margin: 0 0 14px;
+            color: var(--muted)
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <header class="topbar">
+            <div class="brand"><span class="logo"></span><span class="title">Mazes 2.0 BT</span></div>
+            <div class="hud">
+                <div class="timer-wrap">
+                    <label>Time</label>
+                    <div id="timer">00:00.00</div>
+                </div>
+                <div class="best-wrap">
+                    <label>Best</label>
+                    <div id="best">—</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="controls">
+            <button id="newMazeBtn" class="btn">New Maze</button>
+            <label for="difficulty" class="sr-only">Difficulty</label>
+            <select id="difficulty" class="select">
+                <option value="easy">Easy (15×15)</option>
+                <option value="medium" selected>Medium (25×25)</option>
+                <option value="hard">Hard (35×35)</option>
+            </select>
+            <label class="toggle"><input type="checkbox" id="colorblind"> Colorblind Friendly</label>
+            <label class="toggle"><input type="checkbox" id="mute"> Mute</label>
+        </div>
+
+        <div class="playfield">
+            <canvas id="mazeCanvas" aria-label="Maze game canvas" role="img" tabindex="0"></canvas>
+        </div>
+
+        <p class="hint">Move with WASD/Arrows. Reach the goal!</p>
+    </div>
+
+    <div id="winModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+        <div class="modal-card">
+            <h2 id="winTitle">You escaped the maze! 🎉</h2>
+            <p id="winStats"></p>
+            <div class="modal-actions">
+                <button id="modalNew" class="btn primary">New Maze</button>
+                <button id="modalChange" class="btn">Change Difficulty</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ========= Config & UI ========= */
+        const DIFFICULTIES = {
+            easy: { rows: 15, cols: 15 },
+            medium: { rows: 25, cols: 25 },
+            hard: { rows: 35, cols: 35 },
+        };
+        const UI = {
+            canvas: document.getElementById('mazeCanvas'),
+            timer: document.getElementById('timer'),
+            best: document.getElementById('best'),
+            newBtn: document.getElementById('newMazeBtn'),
+            difficulty: document.getElementById('difficulty'),
+            winModal: document.getElementById('winModal'),
+            winStats: document.getElementById('winStats'),
+            modalNew: document.getElementById('modalNew'),
+            modalChange: document.getElementById('modalChange'),
+            colorblind: document.getElementById('colorblind'),
+            mute: document.getElementById('mute'),
+        };
+        const ctx = UI.canvas.getContext('2d', { alpha: false });
+
+        /* ========= Colors ========= */
+        const COLORS = {
+            wall: '#d9e2ff', path: '#0a0e14', player: '#4CC9F0', goal: '#FFD166', grid: '#2b3340', text: '#e8f0fe'
+        };
+        const COLORS_CB = {
+            wall: '#ffffff', path: '#000000', player: '#ffff00', goal: '#00ffff', grid: '#5a5a5a', text: '#ffffff'
+        };
+
+        /* ========= RNG ========= */
+        function mulberry32(seed) {
+            return function () {
+                let t = seed += 0x6D2B79F5;
+                t = Math.imul(t ^ (t >>> 15), t | 1);
+                t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            }
+        }
+
+        /* ========= Audio ========= */
+        const audio = {
+            ctx: null, muted: false,
+            beep(freq = 440, dur = 0.05, type = 'square', vol = 0.03) {
+                if (audio.muted) return;
+                if (!audio.ctx) audio.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const o = audio.ctx.createOscillator();
+                const g = audio.ctx.createGain();
+                o.type = type; o.frequency.value = freq; g.gain.value = vol;
+                o.connect(g); g.connect(audio.ctx.destination);
+                o.start(); o.stop(audio.ctx.currentTime + dur);
+            },
+            win() {
+                audio.beep(600, .08, 'triangle', .04);
+                setTimeout(() => audio.beep(800, .12, 'triangle', .05), 90);
+                setTimeout(() => audio.beep(1000, .18, 'triangle', .06), 200);
+            }
+        };
+
+        /* ========= Maze model ========= */
+        class Cell {
+            constructor(r, c) { this.r = r; this.c = c; this.walls = [true, true, true, true]; this.visited = false; }
+        }
+        function shuffle(arr, rng) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]];
+            } return arr;
+        }
+        function generateMaze(rows, cols, rng) {
+            const grid = Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => new Cell(r, c)));
+            const stack = [];
+            const start = grid[Math.floor(rng() * rows)][Math.floor(rng() * cols)];
+            start.visited = true; stack.push(start);
+            const D = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+
+            while (stack.length) {
+                const cur = stack[stack.length - 1];
+                const nbrs = [];
+                for (let d = 0; d < 4; d++) {
+                    const nr = cur.r + D[d][0], nc = cur.c + D[d][1];
+                    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !grid[nr][nc].visited) {
+                        nbrs.push({ dir: d, cell: grid[nr][nc] });
+                    }
+                }
+                if (nbrs.length) {
+                    shuffle(nbrs, rng);
+                    const pick = nbrs[0];
+                    cur.walls[pick.dir] = false;
+                    pick.cell.walls[(pick.dir + 2) % 4] = false;
+                    pick.cell.visited = true;
+                    stack.push(pick.cell);
+                } else {
+                    stack.pop();
+                }
+            }
+            for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) grid[r][c].visited = false;
+            return grid;
+        }
+        function bfsDistances(grid, start) {
+            const rows = grid.length, cols = grid[0].length;
+            const dist = Array.from({ length: rows }, () => Array(cols).fill(Infinity));
+            const q = [start]; dist[start.r][start.c] = 0;
+            const D = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+            while (q.length) {
+                const cur = q.shift(); const cd = dist[cur.r][cur.c];
+                for (let d = 0; d < 4; d++) {
+                    if (!grid[cur.r][cur.c].walls[d]) {
+                        const nr = cur.r + D[d][0], nc = cur.c + D[d][1];
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && dist[nr][nc] === Infinity) {
+                            dist[nr][nc] = cd + 1; q.push(grid[nr][nc]);
+                        }
+                    }
+                }
+            }
+            return { dist };
+        }
+        function solveExists(grid, start, end) {
+            const rows = grid.length, cols = grid[0].length;
+            const seen = Array.from({ length: rows }, () => Array(cols).fill(false));
+            const q = [start]; seen[start.r][start.c] = true;
+            const D = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+            while (q.length) {
+                const cur = q.shift(); if (cur === end) return true;
+                for (let d = 0; d < 4; d++) {
+                    if (!grid[cur.r][cur.c].walls[d]) {
+                        const nr = cur.r + D[d][0], nc = cur.c + D[d][1];
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !seen[nr][nc]) {
+                            seen[nr][nc] = true; q.push(grid[nr][nc]);
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        function pickStartEnd(grid, rng) {
+            const rows = grid.length, cols = grid[0].length;
+            const manhattanMax = (rows - 1) + (cols - 1);
+            const minRequired = Math.floor(0.6 * manhattanMax);
+            for (let attempt = 0; attempt < 200; attempt++) {
+                const sr = Math.floor(rng() * rows), sc = Math.floor(rng() * cols);
+                const start = grid[sr][sc];
+                const { dist } = bfsDistances(grid, start);
+                const pool = [];
+                for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                    const md = Math.abs(r - sr) + Math.abs(c - sc);
+                    if (md >= minRequired && md !== 1 && dist[r][c] !== Infinity) pool.push(grid[r][c]);
+                }
+                if (pool.length) {
+                    const end = pool[Math.floor(rng() * pool.length)];
+                    if (solveExists(grid, start, end)) return { start, end };
+                }
+            }
+            // Fallback to farthest by distance
+            const sr = Math.floor(rng() * rows), sc = Math.floor(rng() * cols);
+            const start = grid[sr][sc];
+            const { dist } = bfsDistances(grid, start);
+            let er = 0, ec = 0, best = -1;
+            for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+                if (dist[r][c] > best) { best = dist[r][c]; er = r; ec = c; }
+            return { start, end: grid[er][ec] };
+        }
+
+        /* ========= State ========= */
+        let state = {
+            difficulty: 'medium',
+            rng: mulberry32(Math.floor(Math.random() * 1e9)),
+            grid: null, start: null, end: null, player: null,
+            running: false, startTime: 0, elapsedBeforePause: 0, raf: null,
+            colorblind: false, muted: false,
+            bestTimes: { easy: null, medium: null, hard: null },
+            keyLock: false,
+            // drawing metrics
+            cellW: 16, offX: 0, offY: 0
+        };
+
+        /* ========= Storage (localStorage) ========= */
+        const LS = {
+            get(k, fallback = null) {
+                try { const v = localStorage.getItem(k); return v === null ? fallback : JSON.parse(v); }
+                catch { return fallback; }
+            },
+            set(k, v) {
+                try { localStorage.setItem(k, JSON.stringify(v)); } catch { }
+            }
+        };
+        function bestKey(diff) { return `maze_best_${diff}` }
+        function prefsKey() { return 'maze_prefs_v1' }
+
+        /* ========= Timer ========= */
+        function formatTime(ms) {
+            const cs = Math.floor(ms / 10) % 100;
+            const s = Math.floor(ms / 1000) % 60;
+            const m = Math.floor(ms / 60000);
+            const pad = (n, l = 2) => String(n).padStart(l, '0');
+            return `${pad(m)}:${pad(s)}.${pad(cs)}`;
+        }
+        function updateTimerDisplay() {
+            const ms = state.elapsedBeforePause + (state.running ? (performance.now() - state.startTime) : 0);
+            UI.timer.textContent = formatTime(ms);
+        }
+        function startTimer() {
+            state.running = true; state.startTime = performance.now();
+            if (state.raf) cancelAnimationFrame(state.raf);
+            const loop = () => { updateTimerDisplay(); state.raf = requestAnimationFrame(loop); };
+            state.raf = requestAnimationFrame(loop);
+        }
+        function pauseTimer() {
+            if (!state.running) return;
+            state.elapsedBeforePause += performance.now() - state.startTime;
+            state.running = false; if (state.raf) cancelAnimationFrame(state.raf), state.raf = null;
+            updateTimerDisplay();
+        }
+        function resumeTimer() {
+            if (state.running) return;
+            state.startTime = performance.now(); state.running = true;
+            const loop = () => { updateTimerDisplay(); state.raf = requestAnimationFrame(loop); };
+            state.raf = requestAnimationFrame(loop);
+        }
+        function stopTimer(won = false) {
+            if (state.raf) cancelAnimationFrame(state.raf), state.raf = null;
+            const total = state.elapsedBeforePause + (state.running ? (performance.now() - state.startTime) : 0);
+            state.running = false; state.elapsedBeforePause = total; updateTimerDisplay();
+            if (won) {
+                audio.win();
+                const key = bestKey(state.difficulty);
+                const prev = LS.get(key, null);
+                if (prev === null || total < prev) { LS.set(key, total); }
+                state.bestTimes[state.difficulty] = LS.get(key, total);
+                updateBestLabel();
+                showWinModal(total);
+            }
+        }
+        function resetTimer() {
+            state.running = false; state.elapsedBeforePause = 0;
+            if (state.raf) cancelAnimationFrame(state.raf), state.raf = null;
+            UI.timer.textContent = '00:00.00';
+        }
+
+        /* ========= Draw ========= */
+        function currentColors() { return state.colorblind ? COLORS_CB : COLORS; }
+
+        function computeLayout() {
+            // Fill canvas CSS box (already sized by CSS). Set internal resolution to CSS * DPR
+            const cssW = UI.canvas.clientWidth;
+            const cssH = UI.canvas.clientHeight;
+            const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+            UI.canvas.width = Math.max(1, Math.floor(cssW * dpr));
+            UI.canvas.height = Math.max(1, Math.floor(cssH * dpr));
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const rows = state.grid.length, cols = state.grid[0].length;
+            const cellW = Math.floor(Math.min((cssW - 2) / cols, (cssH - 2) / rows));
+            state.cellW = Math.max(6, cellW); // keep walls readable
+            state.offX = Math.floor((cssW - cols * state.cellW) / 2);
+            state.offY = Math.floor((cssH - rows * state.cellW) / 2);
+        }
+        function draw() {
+            if (!state.grid) return;
+            computeLayout();
+            const { wall, path, player, goal, grid } = currentColors();
+            const rows = state.grid.length, cols = state.grid[0].length;
+            const cW = UI.canvas.clientWidth, cH = UI.canvas.clientHeight;
+
+            // background
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // clear with device pixels
+            ctx.fillStyle = path; ctx.fillRect(0, 0, UI.canvas.width, UI.canvas.height);
+            ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+
+            const w = state.cellW, x0 = state.offX, y0 = state.offY;
+
+            // subtle grid
+            ctx.strokeStyle = grid; ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let r = 0; r <= rows; r++) { ctx.moveTo(x0, y0 + r * w + .5); ctx.lineTo(x0 + cols * w, y0 + r * w + .5); }
+            for (let c = 0; c <= cols; c++) { ctx.moveTo(x0 + c * w + .5, y0); ctx.lineTo(x0 + c * w + .5, y0 + rows * w); }
+            ctx.stroke();
+
+            // walls
+            ctx.strokeStyle = wall; ctx.lineWidth = Math.max(2, Math.floor(w * 0.18));
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = state.grid[r][c];
+                    const x = x0 + c * w, y = y0 + r * w;
+                    ctx.beginPath();
+                    if (cell.walls[0]) { ctx.moveTo(x + 0.5, y + 0.5); ctx.lineTo(x + w - 0.5, y + 0.5); }
+                    if (cell.walls[1]) { ctx.moveTo(x + w - 0.5, y + 0.5); ctx.lineTo(x + w - 0.5, y + w - 0.5); }
+                    if (cell.walls[2]) { ctx.moveTo(x + 0.5, y + w - 0.5); ctx.lineTo(x + w - 0.5, y + w - 0.5); }
+                    if (cell.walls[3]) { ctx.moveTo(x + 0.5, y + 0.5); ctx.lineTo(x + 0.5, y + w - 0.5); }
+                    ctx.stroke();
+                }
+            }
+            // outer border
+            ctx.beginPath();
+            ctx.rect(x0 + 0.5, y0 + 0.5, cols * w - 1, rows * w - 1);
+            ctx.stroke();
+
+            // goal (diamond)
+            const gx = x0 + state.end.c * w + w / 2;
+            const gy = y0 + state.end.r * w + w / 2;
+            const gr = Math.max(5, Math.floor(w * 0.28));
+            ctx.fillStyle = goal;
+            ctx.beginPath();
+            ctx.moveTo(gx, gy - gr); ctx.lineTo(gx + gr, gy); ctx.lineTo(gx, gy + gr); ctx.lineTo(gx - gr, gy); ctx.closePath(); ctx.fill();
+
+            // player (circle)
+            const px = x0 + state.player.c * w + w / 2;
+            const py = y0 + state.player.r * w + w / 2;
+            ctx.beginPath(); ctx.fillStyle = player; ctx.arc(px, py, Math.max(5, Math.floor(w * 0.30)), 0, Math.PI * 2); ctx.fill();
+        }
+
+        /* ========= Input ========= */
+        const MOVE_DIR = {
+            ArrowUp: 0, KeyW: 0,
+            ArrowRight: 1, KeyD: 1,
+            ArrowDown: 2, KeyS: 2,
+            ArrowLeft: 3, KeyA: 3,
+        };
+        const ARROWS = new Set(['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft']);
+
+        function handleInput(code) {
+            const dir = MOVE_DIR[code]; if (dir === undefined) return;
+            const p = state.player, cell = state.grid[p.r][p.c];
+            if (cell.walls[dir]) return;
+
+            if (!state.running && state.raf === null) startTimer();
+
+            const D = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+            p.r += D[dir][0]; p.c += D[dir][1];
+            audio.beep(520, .02, 'square', .02);
+            draw();
+
+            if (p.r === state.end.r && p.c === state.end.c) stopTimer(true);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (!UI.winModal.classList.contains('hidden')) return;
+            if (ARROWS.has(e.key)) e.preventDefault();
+            if (e.repeat) return;
+            if (state.keyLock) return;
+            state.keyLock = true;
+            try { handleInput(e.code); } finally { setTimeout(() => state.keyLock = false, 0); }
+        }, { passive: false });
+
+        /* ========= Modal ========= */
+        function showWinModal(ms) {
+            const best = state.bestTimes[state.difficulty];
+            const bestTxt = (best != null) ? formatTime(best) : formatTime(ms);
+            UI.winStats.textContent = `Your time: ${formatTime(ms)} · Best (${state.difficulty}): ${bestTxt}`;
+            UI.winModal.classList.remove('hidden');
+        }
+        function hideWinModal() { UI.winModal.classList.add('hidden'); }
+
+        /* ========= Best label ========= */
+        function updateBestLabel() {
+            const b = state.bestTimes[state.difficulty];
+            UI.best.textContent = (b != null) ? formatTime(b) : '—';
+        }
+
+        /* ========= Regenerate ========= */
+        function reseed() { state.rng = mulberry32(Math.floor(Math.random() * 1e9)); }
+        function regenerate() {
+            const { rows, cols } = DIFFICULTIES[state.difficulty];
+            reseed();
+            state.grid = generateMaze(rows, cols, state.rng);
+            const { start, end } = pickStartEnd(state.grid, state.rng);
+            state.start = start; state.end = end; state.player = { r: start.r, c: start.c };
+            resetTimer(); draw();
+        }
+
+        /* ========= Prefs & init ========= */
+        function loadPrefs() {
+            // best times
+            state.bestTimes.easy = LS.get(bestKey('easy'), null);
+            state.bestTimes.medium = LS.get(bestKey('medium'), null);
+            state.bestTimes.hard = LS.get(bestKey('hard'), null);
+
+            const prefs = LS.get(prefsKey(), { colorblind: false, muted: false, difficulty: 'medium' });
+            state.colorblind = !!prefs.colorblind;
+            state.muted = !!prefs.muted;
+            if (prefs.difficulty && DIFFICULTIES[prefs.difficulty]) state.difficulty = prefs.difficulty;
+
+            UI.colorblind.checked = state.colorblind;
+            UI.mute.checked = state.muted;
+            UI.difficulty.value = state.difficulty;
+            audio.muted = state.muted;
+            updateBestLabel();
+        }
+        function savePrefs() {
+            LS.set(prefsKey(), { colorblind: state.colorblind, muted: state.muted, difficulty: state.difficulty });
+        }
+
+        /* ========= Responsive sizing ========= */
+        const ro = new ResizeObserver(() => draw());
+        ro.observe(document.querySelector('.playfield'));
+
+        /* Pause/resume on tab visibility / focus */
+        window.addEventListener('blur', () => pauseTimer());
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) { pauseTimer(); }
+            else if (state.player && !(state.player.r === state.end.r && state.player.c === state.end.c) && state.elapsedBeforePause > 0) {
+                resumeTimer();
+            }
+        });
+
+        /* ========= Wire UI ========= */
+        UI.newBtn.addEventListener('click', () => { hideWinModal(); regenerate(); });
+        UI.difficulty.addEventListener('change', () => {
+            state.difficulty = UI.difficulty.value; savePrefs(); hideWinModal(); regenerate();
+        });
+        UI.modalNew.addEventListener('click', () => { hideWinModal(); regenerate(); });
+        UI.modalChange.addEventListener('click', () => { hideWinModal(); UI.difficulty.focus(); });
+        UI.colorblind.addEventListener('change', () => { state.colorblind = UI.colorblind.checked; savePrefs(); draw(); });
+        UI.mute.addEventListener('change', () => { state.muted = UI.mute.checked; audio.muted = state.muted; savePrefs(); });
+
+        /* ========= Boot ========= */
+        (function init() {
+            loadPrefs();
+            regenerate();
+            UI.canvas.focus();
+            UI.canvas.addEventListener('pointerdown', () => UI.canvas.focus(), { passive: true });
+        })();
+    </script>
+</body>
+
+</html>
