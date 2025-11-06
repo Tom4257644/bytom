@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>3D Sniper — Rifle Visible & Larger</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
+            background: #000;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #blocker {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .menu-screen {
+            color: #fff;
+            text-align: center;
+        }
+
+        #instructions-screen {
+            cursor: pointer;
+        }
+
+        #victory-screen {
+            display: none;
+        }
+
+        #dot-crosshair {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.55);
+            border-radius: 50%;
+            pointer-events: none;
+            display: none;
+            z-index: 2;
+        }
+
+        #scope-overlay {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 480px;
+            height: 480px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.92);
+            pointer-events: none;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            z-index: 3;
+        }
+
+        #scope-overlay::before,
+        #scope-overlay::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 0, 0, 0.85);
+        }
+
+        #scope-overlay::before {
+            left: 50%;
+            top: 2%;
+            bottom: 2%;
+            width: 1px;
+        }
+
+        #scope-overlay::after {
+            top: 50%;
+            left: 2%;
+            right: 2%;
+            height: 1px;
+        }
+
+        .hud {
+            position: fixed;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        #feedback {
+            left: 50%;
+            bottom: 56px;
+            transform: translateX(-50%);
+            font-size: 22px;
+        }
+
+        #zoom-indicator {
+            right: 20px;
+            bottom: 20px;
+            font-size: 18px;
+        }
+
+        #target-counter {
+            left: 20px;
+            top: 20px;
+            font-size: 20px;
+        }
+
+        #timer {
+            right: 20px;
+            top: 20px;
+            font-size: 20px;
+        }
+
+        #restart-button {
+            font-size: 20px;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 10px;
+            border: 0;
+            background: #2bd96b;
+            color: #06250f;
+        }
+
+        /* Big rifle image */
+        #hip-image {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            width: min(55vw, 750px);
+            height: auto;
+            z-index: 2;
+            pointer-events: none;
+            display: block;
+            /* visible from start */
+            filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.8));
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="blocker">
+        <div id="instructions-screen" class="menu-screen">
+            <h1 style="font-size:48px;margin:0 0 10px">Sniper Concept</h1>
+            <p style="font-size:22px;margin:0 0 20px">Click to Start / Resume</p>
+            <p style="line-height:1.6">
+                AIM: Mouse<br>
+                TOGGLE SCOPE (ADS): Right Click<br>
+                EXIT SCOPE: <b>X</b> &nbsp; | &nbsp; SHOOT: Left Click<br>
+                ZOOM IN: [ + / = ] &nbsp; ZOOM OUT: [ - ]<br>
+                Press ESC to pause.
+            </p>
+        </div>
+        <div id="victory-screen" class="menu-screen">
+            <h1 style="font-size:72px;color:limegreen;margin:0 0 10px">MISSION COMPLETE!</h1>
+            <p id="final-time" style="font-size:22px;margin:0 0 20px"></p>
+            <button id="restart-button">Play Again</button>
+        </div>
+    </div>
+
+    <div id="dot-crosshair"></div>
+    <div id="scope-overlay"></div>
+    <div id="feedback" class="hud"></div>
+    <div id="zoom-indicator" class="hud"></div>
+    <div id="target-counter" class="hud"></div>
+    <div id="timer" class="hud"></div>
+
+    <img id="hip-image" src="rifle.png" alt="Rifle UI">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        const raycaster = new THREE.Raycaster();
+
+        const TOTAL_TARGETS = 10;
+        let zombies = [];
+        let trees = [];
+        let cars = [];
+        let worldHits = []; // ground + scenery
+        let ground;
+        let targetsHitCount = 0;
+        let gameActive = false;
+        let gameOver = false;
+        let isScoped = false;
+
+        const HIP_FIRE_FOV = 75;
+        const MIN_ZOOM_FOV = 30;
+        const MAX_ZOOM_FOV = 5;
+        let currentScopeFOV = 18;
+        const NORMAL_SENSITIVITY = 1.0;
+        let activeFovTween = null;
+
+        let gunModel, muzzleRef;
+        const WEAPON_HIP_POSITION = new THREE.Vector3(0.35, -0.28, -0.95);
+        const WEAPON_ADS_POSITION = new THREE.Vector3(0.35, -1.0, -0.95);
+        const WEAPON_BASE_ROTATION = new THREE.Euler(0, -0.12, 0);
+        let activeWeaponTween = null;
+
+        const blocker = document.getElementById('blocker');
+        const instructionsScreen = document.getElementById('instructions-screen');
+        const victoryScreen = document.getElementById('victory-screen');
+        const restartButton = document.getElementById('restart-button');
+        const finalTimeEl = document.getElementById('final-time');
+        const dotCrosshair = document.getElementById('dot-crosshair');
+        const scopeOverlay = document.getElementById('scope-overlay');
+        const zoomIndicator = document.getElementById('zoom-indicator');
+        const feedback = document.getElementById('feedback');
+        const targetCounterUI = document.getElementById('target-counter');
+        const timerEl = document.getElementById('timer');
+        const hipImage = document.getElementById('hip-image');
+
+        const textureLoader = new THREE.TextureLoader();
+        const zombieTexture = textureLoader.load('zombie.png');
+        const ZOMBIE_W = 5, ZOMBIE_H = 8;
+
+        // Bullets/tracers with continuous collision
+        const bullets = [];
+        const BULLET_SPEED = 420;      // world units / sec
+        const MAX_RANGE = 1200;        // max travel distance if no collision
+        const IMPACTS = [];
+
+        // Timer
+        let missionStartTime = 0;
+        let missionElapsedMs = 0;
+        let missionFrozenTime = null;
+
+        init();
+        renderer.setAnimationLoop(animate);
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.Fog(0x87CEEB, 220, 1200);
+
+            camera = new THREE.PerspectiveCamera(HIP_FIRE_FOV, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 20, 20);
+
+            controls = new THREE.PointerLockControls(camera, document.body);
+            controls.pointerSpeed = NORMAL_SENSITIVITY;
+
+            instructionsScreen.addEventListener('click', () => {
+                if (!gameActive && !gameOver) startGame();
+                else if (gameActive) controls.lock();
+            });
+            restartButton.addEventListener('click', restartGame);
+
+            controls.addEventListener('lock', () => {
+                instructionsScreen.style.display = 'none';
+                blocker.style.display = 'none';
+                updateView(true);
+            });
+            controls.addEventListener('unlock', () => {
+                if (!gameOver) {
+                    blocker.style.display = 'flex';
+                    instructionsScreen.style.display = 'block';
+                }
+                scopeOverlay.style.display = 'none';
+                dotCrosshair.style.display = 'none';
+                zoomIndicator.textContent = '';
+                hipImage.style.display = 'none';
+            });
+
+            scene.add(new THREE.AmbientLight(0xaaaaaa));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+            sun.position.set(-10, 60, 20);
+            scene.add(sun);
+
+            ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(4000, 4000),
+                new THREE.MeshStandardMaterial({ color: 0x556B2F })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            scene.add(ground);
+            worldHits.push(ground);
+
+            createGunModel();
+            spawnScenery(60, 18);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            document.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('keydown', onKeyDown);
+            drawTimer(0);
+        }
+
+        function startGame() {
+            gameActive = true;
+            gameOver = false;
+            targetsHitCount = 0;
+
+            isScoped = false;                 // start hip-fire
+            gunModel.visible = true;          // ensure 3D model visible
+            hipImage.style.display = 'block'; // ensure rifle image visible
+            updateView(true);
+
+            clearArray(zombies);
+            clearBullets();
+
+            spawnZombies(TOTAL_TARGETS);
+            updateTargetCounter();
+
+            missionStartTime = performance.now();
+            missionFrozenTime = null;
+            drawTimer(0);
+
+            controls.lock();
+        }
+
+
+        function restartGame() {
+            victoryScreen.style.display = 'none';
+            instructionsScreen.style.display = 'block';
+            finalTimeEl.textContent = '';
+            TWEEN.removeAll();
+
+            isScoped = false;
+            gunModel.visible = true;
+            updateView(true);
+
+            startGame();
+        }
+
+        function clearArray(arr) {
+            arr.forEach(obj => {
+                scene.remove(obj);
+                obj.material?.dispose?.();
+                obj.geometry?.dispose?.();
+            });
+            arr.length = 0;
+        }
+
+        function clearBullets() {
+            bullets.forEach(b => {
+                scene.remove(b.mesh); b.mesh.material?.dispose?.(); b.mesh.geometry?.dispose?.();
+                scene.remove(b.tracer); b.tracer.material?.dispose?.(); b.tracer.geometry?.dispose?.();
+            });
+            bullets.length = 0;
+
+            IMPACTS.forEach(p => {
+                scene.remove(p.mesh); p.mesh.material?.dispose?.(); p.mesh.geometry?.dispose?.();
+            });
+            IMPACTS.length = 0;
+        }
+
+        /* ---------- Scenery (trees & cars, 1.8×) ---------- */
+        function spawnScenery(treeCount = 50, carCount = 12) {
+            for (let i = 0; i < treeCount; i++) {
+                const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3e1a, roughness: 1 });
+                const leafMat = new THREE.MeshStandardMaterial({ color: 0x2b7a2b, roughness: 0.9 });
+
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 6, 8), trunkMat);
+                const leaves = new THREE.Mesh(new THREE.ConeGeometry(3.2, 7, 10), leafMat);
+                const group = new THREE.Group();
+                trunk.position.y = 3;
+                leaves.position.y = 6.5;
+                group.add(trunk, leaves);
+                group.scale.set(1.8, 1.8, 1.8);
+
+                const z = -120 - Math.random() * 800;
+                const x = (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 260);
+                group.position.set(x, 0, z);
+                group.rotation.y = Math.random() * Math.PI * 2;
+
+                scene.add(group);
+                trees.push(group);
+                worldHits.push(group);
+            }
+
+            for (let i = 0; i < carCount; i++) {
+                const car = new THREE.Group();
+                const bodyMat = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(Math.random(), 0.6, 0.45) });
+                const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.3, roughness: 0.8 });
+                const glassMat = new THREE.MeshStandardMaterial({ color: 0x88aaff, metalness: 0.6, roughness: 0.2, opacity: 0.7, transparent: true });
+
+                const body = new THREE.Mesh(new THREE.BoxGeometry(6, 1.4, 3), bodyMat);
+                body.position.y = 1.1;
+                const roof = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 2.6), glassMat);
+                roof.position.set(0, 2, 0);
+
+                const wheelGeom = new THREE.CylinderGeometry(0.7, 0.7, 0.6, 16);
+                const w1 = new THREE.Mesh(wheelGeom, wheelMat);
+                const w2 = w1.clone(), w3 = w1.clone(), w4 = w1.clone();
+                [w1, w2, w3, w4].forEach(w => w.rotation.z = Math.PI / 2);
+                w1.position.set(-2.2, 0.7, 1.3);
+                w2.position.set(2.2, 0.7, 1.3);
+                w3.position.set(-2.2, 0.7, -1.3);
+                w4.position.set(2.2, 0.7, -1.3);
+
+                car.add(body, roof, w1, w2, w3, w4);
+                car.scale.set(1.8, 1.8, 1.8);
+
+                const z = -140 - Math.random() * 700;
+                const x = (Math.random() < 0.5 ? -1 : 1) * (30 + Math.random() * 180);
+                car.position.set(x, 0, z);
+                car.rotation.y = Math.random() * Math.PI * 2;
+
+                scene.add(car);
+                cars.push(car);
+                worldHits.push(car);
+            }
+        }
+
+        /* ---------- Predictable Zombies ---------- */
+        function spawnZombies(n) {
+            for (let i = 0; i < n; i++) {
+                const mat = new THREE.SpriteMaterial({ map: zombieTexture, transparent: true, color: 0xffffff });
+                const sprite = new THREE.Sprite(mat);
+                sprite.scale.set(ZOMBIE_W, ZOMBIE_H, 1);
+
+                const seed = (i * 9301 + 49297) % 233280 / 233280;
+                const seed2 = (i * 5273 + 137) % 1000 / 1000;
+
+                const z0 = -180 - (i * 25) - Math.floor(seed * 120);
+                const x0 = (seed2 - 0.5) * 220;
+                sprite.position.set(x0, ZOMBIE_H * 0.5, z0);
+
+                const A = 10 + (seed * 20);
+                const W = 2 + (seed2 * 3);
+                const B = 0.8 + seed2 * 0.8;
+                const wx = 0.6 + (seed * 0.6);
+                const wz = 0.5 + (seed2 * 0.5);
+                const wy = 1.8 + (seed * 0.6);
+                const phx = seed * Math.PI * 2;
+                const phz = seed2 * Math.PI * 2;
+                const phy = (seed + seed2) * Math.PI;
+
+                sprite.userData = {
+                    isHit: false, baseY: ZOMBIE_H * 0.5, t0: performance.now() * 0.001,
+                    x0, z0, A, W, B, wx, wz, wy, phx, phz, phy
+                };
+
+                scene.add(sprite);
+                zombies.push(sprite);
+            }
+        }
+        function updateZombies(nowSec) {
+            for (const z of zombies) {
+                const u = z.userData; if (u.isHit) continue;
+                const t = nowSec - u.t0;
+                const x = u.x0 + u.A * Math.sin(u.wx * t + u.phx);
+                const zpos = u.z0 + u.W * Math.sin(u.wz * t + u.phz);
+                const y = u.baseY + u.B * Math.sin(u.wy * t + u.phy);
+                z.position.set(x, y, zpos);
+            }
+        }
+
+        /* ---------- Weapon ---------- */
+        function createGunModel() {
+            gunModel = new THREE.Group();
+
+            const wood = new THREE.MeshStandardMaterial({ color: 0x4b3621, metalness: 0.1, roughness: 0.75 });
+            const metal = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.85, roughness: 0.35 });
+            const rubber = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.2, roughness: 0.9 });
+            const skin = new THREE.MeshStandardMaterial({ color: 0xffd9b3, metalness: 0.0, roughness: 1.0 });
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 0.95), metal);
+            body.position.set(0.0, 0.02, -0.42);
+            gunModel.add(body);
+
+            const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 2.0, 20), metal);
+            barrel.rotation.x = Math.PI / 2; barrel.position.set(0.0, 0.07, -1.55); gunModel.add(barrel);
+
+            const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.12, 16), metal);
+            muzzle.rotation.x = Math.PI / 2; muzzle.position.set(0.0, 0.07, -2.55); gunModel.add(muzzle);
+            muzzleRef = muzzle;
+
+            const scope = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.72, 20), metal);
+            scope.rotation.x = Math.PI / 2; scope.position.set(0.0, 0.16, -0.58); gunModel.add(scope);
+
+            const sightBase = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.08), metal);
+            sightBase.position.set(0.0, 0.14, -2.25); gunModel.add(sightBase);
+            const sightPost = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.06, 0.01), metal);
+            sightPost.position.set(0.0, 0.18, -2.25); gunModel.add(sightPost);
+
+            const stock = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.28, 0.58), wood);
+            stock.position.set(0.0, -0.05, 0.22); stock.rotation.x = 0.06; gunModel.add(stock);
+
+            const grip = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.20, 0.12), rubber);
+            grip.position.set(-0.04, -0.16, -0.10); grip.rotation.x = -0.15; gunModel.add(grip);
+
+            const handguard = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.50), wood);
+            handguard.position.set(0.0, 0.02, -1.18); gunModel.add(handguard);
+
+            const rightHand = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.08, 0.14), skin);
+            rightHand.position.set(-0.07, -0.19, -0.10); gunModel.add(rightHand);
+
+            const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.16), skin);
+            leftHand.position.set(0.10, -0.02, -1.12); gunModel.add(leftHand);
+
+            gunModel.scale.set(1.4, 1.4, 1.4);
+            gunModel.position.copy(WEAPON_HIP_POSITION);
+            gunModel.rotation.copy(WEAPON_BASE_ROTATION);
+            camera.add(gunModel);
+            gunModel.visible = true;
+        }
+
+        /* ---------- View / Zoom ---------- */
+        function updateView(instant = false) {
+            const targetFOV = isScoped ? currentScopeFOV : HIP_FIRE_FOV;
+            const targetWeaponPos = isScoped ? WEAPON_ADS_POSITION : WEAPON_HIP_POSITION;
+            const t = 200;
+
+            if (activeFovTween) activeFovTween.stop();
+            if (activeWeaponTween) activeWeaponTween.stop();
+
+            if (instant) {
+                camera.fov = targetFOV; camera.updateProjectionMatrix();
+                gunModel.position.copy(targetWeaponPos);
+            } else {
+                activeFovTween = new TWEEN.Tween(camera)
+                    .to({ fov: targetFOV }, t)
+                    .easing(TWEEN.Easing.Quadratic.Out)
+                    .onUpdate(() => camera.updateProjectionMatrix())
+                    .onComplete(() => activeFovTween = null)
+                    .start();
+
+                activeWeaponTween = new TWEEN.Tween(gunModel.position)
+                    .to(targetWeaponPos, t)
+                    .easing(TWEEN.Easing.Quadratic.Out)
+                    .onComplete(() => activeWeaponTween = null)
+                    .start();
+            }
+
+            if (isScoped) {
+                scopeOverlay.style.display = 'block';
+                requestAnimationFrame(() => scopeOverlay.style.opacity = 1);
+                dotCrosshair.style.display = 'none';
+                hipImage.style.display = 'none';
+                controls.pointerSpeed = NORMAL_SENSITIVITY * (currentScopeFOV / HIP_FIRE_FOV);
+                updateZoomIndicator();
+            } else {
+                if (controls.isLocked) {
+                    dotCrosshair.style.display = 'block';
+                    hipImage.style.display = 'block';
+                }
+                scopeOverlay.style.opacity = 0;
+                setTimeout(() => { if (!isScoped) scopeOverlay.style.display = 'none'; }, 160);
+                controls.pointerSpeed = NORMAL_SENSITIVITY;
+                zoomIndicator.textContent = '';
+            }
+        }
+
+        function updateZoomIndicator() { zoomIndicator.textContent = `${(HIP_FIRE_FOV / currentScopeFOV).toFixed(1)}x`; }
+        function adjustZoom(delta) {
+            currentScopeFOV = Math.max(MAX_ZOOM_FOV, Math.min(MIN_ZOOM_FOV, currentScopeFOV + delta));
+            updateView(true);
+        }
+
+        /* ---------- Input ---------- */
+        function onMouseDown(e) {
+            if (!controls.isLocked) return;
+            if (e.button === 0) shoot();
+            else if (e.button === 2) { isScoped = !isScoped; updateView(); }
+        }
+        function onKeyDown(e) {
+            if (e.key === 'x' || e.key === 'X') {
+                if (controls.isLocked && isScoped) { isScoped = false; updateView(true); }
+                return;
+            }
+            if (controls.isLocked && isScoped && (e.key === '-' || e.key === '_' || e.key === '=' || e.key === '+')) {
+                if (e.key === '-' || e.key === '_') adjustZoom(+3);
+                if (e.key === '=' || e.key === '+') adjustZoom(-3);
+                return;
+            }
+            if (e.key === 'Escape') {
+                if (controls.isLocked) {
+                    if (isScoped) { isScoped = false; updateView(true); }
+                    else { controls.unlock(); }
+                }
+            }
+        }
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        /* ---------- Shooting: continuous collision ---------- */
+        function showFeedback(msg, color) {
+            feedback.textContent = msg;
+            feedback.style.color = color;
+            clearTimeout(showFeedback._t);
+            showFeedback._t = setTimeout(() => feedback.textContent = '', 900);
+        }
+        function updateTargetCounter() {
+            targetCounterUI.textContent = `Targets Remaining: ${Math.max(0, TOTAL_TARGETS - targetsHitCount)}`;
+        }
+
+        function shoot() {
+            // Aim vector (spread when hip-fire)
+            const aim = new THREE.Vector2(0, 0);
+            if (!isScoped) {
+                const spread = 0.08;
+                aim.x = (Math.random() - 0.5) * spread;
+                aim.y = (Math.random() - 0.5) * spread;
+            }
+
+            // Bullet starts at muzzle; flies in the camera ray direction
+            const start = new THREE.Vector3();
+            muzzleRef.getWorldPosition(start);
+
+            raycaster.setFromCamera(aim, camera);
+            const dir = raycaster.ray.direction.clone().normalize();
+
+            // Visuals
+            const bulletMat = new THREE.MeshStandardMaterial({ color: 0xffee99, emissive: 0xffcc66, metalness: 0.2, roughness: 0.3 });
+            const bulletMesh = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 10), bulletMat);
+            bulletMesh.position.copy(start);
+            scene.add(bulletMesh);
+
+            const tracerGeom = new THREE.BufferGeometry().setFromPoints([start.clone(), start.clone()]);
+            const tracerMat = new THREE.LineBasicMaterial({ color: 0xffdd88, transparent: true, opacity: 0.9 });
+            const tracer = new THREE.Line(tracerGeom, tracerMat);
+            scene.add(tracer);
+
+            bullets.push({
+                mesh: bulletMesh,
+                tracer,
+                pos: start.clone(),
+                prev: start.clone(),
+                dir,                              // constant flight direction
+                speed: BULLET_SPEED,
+                traveled: 0,
+                maxRange: MAX_RANGE,
+                alive: true
+            });
+        }
+
+        function updateBullets(dt) {
+            // prepare a raycaster for segment tests
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                if (!b.alive) continue;
+
+                // advance
+                b.prev.copy(b.pos);
+                const step = b.dir.clone().multiplyScalar(b.speed * dt);
+                b.pos.add(step);
+                b.traveled += step.length();
+
+                // update visuals
+                b.mesh.position.copy(b.pos);
+                const backPoint = b.prev.clone();
+                b.tracer.geometry.setFromPoints([backPoint, b.pos]);
+                b.tracer.material.opacity = 0.6 + 0.4 * Math.max(0, 1 - (b.traveled / b.maxRange));
+
+                // segment ray (prev -> pos)
+                const segDir = b.pos.clone().sub(b.prev);
+                const segLen = segDir.length();
+                if (segLen > 0) {
+                    segDir.normalize();
+                    raycaster.set(b.prev, segDir);
+                    raycaster.far = segLen + 0.001; // include endpoint
+
+                    // check zombies first
+                    const zHits = raycaster.intersectObjects(zombies, false);
+                    if (zHits.length) {
+                        const hit = zHits[0];
+                        const zombie = hit.object;
+                        if (!zombie.userData.isHit) {
+                            // impact and kill
+                            const p = hit.point.clone();
+                            b.pos.copy(p);
+                            spawnImpactAt(p);
+                            killZombie(zombie);
+                            cleanupBullet(i);
+                            showFeedback('TARGET DOWN!', 'lime');
+                            continue;
+                        }
+                    }
+
+                    // check world (trees, cars, ground)
+                    const wHits = raycaster.intersectObjects(worldHits, true);
+                    if (wHits.length) {
+                        const hit = wHits[0];
+                        const p = hit.point.clone();
+                        b.pos.copy(p);
+                        spawnImpactAt(p);
+                        cleanupBullet(i);
+                        showFeedback('MISS!', 'red');
+                        continue;
+                    }
+                }
+
+                // max range -> vanish
+                if (b.traveled >= b.maxRange) {
+                    spawnImpactAt(b.pos);
+                    cleanupBullet(i);
+                    showFeedback('MISS!', 'red');
+                }
+            }
+
+            // update impacts
+            for (let j = IMPACTS.length - 1; j >= 0; j--) {
+                const p = IMPACTS[j];
+                p.t += dt;
+                const a = p.t / p.life;
+                p.mesh.scale.setScalar(1 + 2 * a);
+                p.mesh.material.opacity = 1 - a;
+                if (p.t >= p.life) {
+                    scene.remove(p.mesh);
+                    p.mesh.material.dispose();
+                    p.mesh.geometry.dispose();
+                    IMPACTS.splice(j, 1);
+                }
+            }
+        }
+
+        function cleanupBullet(index) {
+            const b = bullets[index];
+            b.alive = false;
+            scene.remove(b.mesh); b.mesh.material.dispose(); b.mesh.geometry.dispose();
+            scene.remove(b.tracer); b.tracer.material.dispose(); b.tracer.geometry.dispose();
+            bullets.splice(index, 1);
+        }
+
+        function spawnImpactAt(point) {
+            const mat = new THREE.MeshBasicMaterial({ color: 0xfff2a6, transparent: true, opacity: 1 });
+            const geo = new THREE.SphereGeometry(0.25, 12, 12);
+            const m = new THREE.Mesh(geo, mat);
+            m.position.copy(point);
+            scene.add(m);
+            IMPACTS.push({ mesh: m, t: 0, life: 0.25 });
+        }
+
+        function killZombie(target) {
+            const u = target.userData;
+            u.isHit = true;
+            targetsHitCount++;
+            updateTargetCounter();
+
+            target.material.color.set(0x666666);
+            target.material.opacity = 0.9;
+
+            const startY = target.scale.y;
+            new TWEEN.Tween(target.scale)
+                .to({ y: Math.max(0.1, startY * 0.12) }, 480)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .start();
+
+            const newPosY = (target.scale.y) * 0.5;
+            new TWEEN.Tween(target.position)
+                .to({ y: newPosY }, 480)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .start();
+
+            if (targetsHitCount >= TOTAL_TARGETS) triggerVictory();
+        }
+
+        function triggerVictory() {
+            gameOver = true;
+            controls.unlock();
+            instructionsScreen.style.display = 'none';
+            blocker.style.display = 'flex';
+            victoryScreen.style.display = 'block';
+
+            const timeStr = formatMs(missionElapsedMs);
+            missionFrozenTime = timeStr;
+            finalTimeEl.textContent = `Your time: ${timeStr}`;
+        }
+
+        /* ---------- Weapon sway ---------- */
+        function updateWeaponSway(time) {
+            if (!controls.isLocked || isScoped || activeWeaponTween) return;
+            const swayAmt = 0.02, speed = 2.5, t = time * 0.001;
+            const sx = Math.sin(t * speed) * swayAmt;
+            const sy = Math.cos(t * speed * 0.8) * swayAmt * 0.5;
+            gunModel.rotation.y = WEAPON_BASE_ROTATION.y + sx;
+            gunModel.rotation.x = WEAPON_BASE_ROTATION.x + sy;
+        }
+
+        /* ---------- Loop + Timer ---------- */
+        let lastTime = performance.now();
+        function animate(now) {
+            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            lastTime = now;
+
+            const tSec = now * 0.001;
+
+            updateWeaponSway(now);
+            updateZombies(tSec);
+            updateBullets(dt);
+
+            if (gameActive && !gameOver) {
+                missionElapsedMs = now - missionStartTime;
+                drawTimer(missionElapsedMs);
+            } else if (missionFrozenTime) {
+                timerEl.textContent = missionFrozenTime;
+            }
+
+            TWEEN.update(now);
+            renderer.render(scene, camera);
+        }
+
+        function drawTimer(ms) { timerEl.textContent = formatMs(ms); }
+        function formatMs(ms) {
+            const totalSeconds = ms / 1000;
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return minutes > 0
+                ? `${minutes}:${seconds.toFixed(2).padStart(5, '0')}`
+                : seconds.toFixed(2) + 's';
+        }
+
+        /* ---------- View helpers ---------- */
+        function updateZoomIndicator() { zoomIndicator.textContent = `${(HIP_FIRE_FOV / currentScopeFOV).toFixed(1)}x`; }
+        function adjustZoom(delta) {
+            currentScopeFOV = Math.max(MAX_ZOOM_FOV, Math.min(MIN_ZOOM_FOV, currentScopeFOV + delta));
+            updateView(true);
+        }
+    </script>
+</body>
+
+</html>
