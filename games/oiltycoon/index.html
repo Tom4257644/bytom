@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oil Tycoon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            /* Prevent body scroll */
+        }
+
+        /* Light scrollbar for the control panel */
+        .control-panel-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .control-panel-scroll::-webkit-scrollbar-track {
+            background: #fefce8;
+            /* yellow-100 */
+        }
+
+        .control-panel-scroll::-webkit-scrollbar-thumb {
+            background: #fde047;
+            /* yellow-300 */
+            border-radius: 4px;
+        }
+
+        .control-panel-scroll::-webkit-scrollbar-thumb:hover {
+            background: #facc15;
+            /* yellow-400 */
+        }
+
+        /* Click feedback animation */
+        .click-feedback {
+            position: absolute;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #ca8a04;
+            /* yellow-600 */
+            /* pointer-events: none; <- This is inherited from container now */
+            animation: float-up 1s ease-out forwards;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
+        }
+
+        @keyframes float-up {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+
+        /* Oil Rig Pump Animation */
+        #rig-arm {
+            animation-name: pump;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+            /* Base duration, will be set by JS */
+            animation-duration: 5s;
+            transform-origin: 50% 90%;
+            /* Pivot point */
+        }
+
+        @keyframes pump {
+            0% {
+                transform: rotate(-5deg);
+            }
+
+            50% {
+                transform: rotate(5deg);
+            }
+
+            100% {
+                transform: rotate(-5deg);
+            }
+        }
+
+        /* Number-jiggle prevention */
+        .mono-nums {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Custom button styling */
+        .btn {
+            @apply font-bold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out border-b-4 disabled:opacity-50 disabled:cursor-not-allowed;
+            @apply active:transform active:translate-y-0.5 active:border-b-2 active:shadow-sm disabled:transform-none disabled:active:translate-y-0 disabled:active:border-b-4 disabled:active:shadow-md;
+        }
+
+        .btn-green {
+            @apply bg-gradient-to-b from-green-500 to-green-600 text-white border-green-800;
+            @apply hover:from-green-400 hover:to-green-500 disabled:from-gray-400 disabled:to-gray-400 disabled:text-gray-700 disabled:border-gray-600;
+            @apply active:border-green-700;
+        }
+
+        .btn-blue {
+            @apply bg-gradient-to-b from-blue-500 to-blue-600 text-white border-blue-800;
+            @apply hover:from-blue-400 hover:to-blue-500 disabled:from-gray-400 disabled:to-gray-400 disabled:text-gray-700 disabled:border-gray-600;
+            @apply active:border-blue-700;
+        }
+
+        .btn-purple {
+            @apply bg-gradient-to-b from-purple-500 to-purple-600 text-white border-purple-800;
+            @apply hover:from-purple-400 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-400 disabled:text-gray-700 disabled:border-gray-600;
+            @apply active:border-purple-700;
+        }
+
+        .btn-red {
+            @apply bg-gradient-to-b from-red-600 to-red-700 text-white border-red-900;
+            @apply hover:from-red-500 hover:to-red-600 active:border-red-800;
+        }
+
+        .btn-gray {
+            @apply bg-gradient-to-b from-gray-500 to-gray-600 text-white border-gray-800;
+            @apply hover:from-gray-400 hover:to-gray-500 active:border-gray-700;
+        }
+
+        /* Upgrade Card */
+        .upgrade-card {
+            @apply bg-white p-4 rounded-lg shadow-lg border border-gray-200 flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0 sm:space-x-4;
+        }
+    </style>
+</head>
+
+<body class="bg-yellow-100 text-gray-800 font-inter">
+
+    <div class="flex flex-col lg:flex-row h-screen max-h-screen">
+
+        <div
+            class="w-full lg:w-3/5 h-1/2 lg:h-full flex flex-col items-center justify-center p-6 relative overflow-hidden bg-yellow-200 border-b-4 lg:border-b-0 lg:border-r-4 border-yellow-400">
+
+            <div id="click-feedback-container" class="absolute inset-0 z-20 pointer-events-none"></div>
+
+            <h1 class="text-4xl font-bold text-yellow-700 mb-4 absolute top-6 left-6">Oil Field</h1>
+
+            <div class="text-center relative z-10">
+                <button id="clicker-btn"
+                    class="mb-4 focus:outline-none transition-transform duration-100 active:scale-95">
+                    <svg width="250" height="300" viewBox="0 0 200 250"
+                        class="fill-current text-gray-700 drop-shadow-lg">
+                        <path d="M70 240 L70 220 L30 240 L30 250 L170 250 L170 240 L130 220 L130 240 Z"
+                            class="text-gray-600" />
+                        <path d="M70 220 L90 50 L110 50 L130 220 Z" />
+                        <path d="M73 210 L127 210" stroke="#fef08a" stroke-width="4" />
+                        <path d="M78 170 L122 170" stroke="#fef08a" stroke-width="4" />
+                        <path d="M83 130 L117 130" stroke="#fef08a" stroke-width="4" />
+                        <path d="M88 90 L112 90" stroke="#fef08a" stroke-width="4" />
+                        <g id="rig-arm">
+                            <path d="M90 50 L50 60 L60 80 L100 70 Z" class="text-gray-600" />
+                            <path d="M100 70 L140 80 L150 60 L110 50 Z" class="text-gray-600" />
+                            <circle cx="100" cy="70" r="8" class="text-gray-800" />
+                            <rect x="98" y="70" width="4" height="150" class="text-gray-600" />
+                        </g>
+                    </svg>
+                </button>
+                <p id="click-power-display" class="text-xl text-yellow-700 font-semibold mono-nums">Manual Pump: +$0.50
+                </p>
+                <p class="text-gray-600">Click the rig to pump oil manually!</p>
+            </div>
+
+            <div class="absolute bottom-0 left-0 right-0 h-16 bg-yellow-700 border-t-4 border-yellow-900"></div>
+        </div>
+
+        <div class="w-full lg:w-2/5 h-1/2 lg:h-full flex flex-col bg-yellow-50">
+            <div class="p-6 bg-yellow-50 shadow-lg z-10 border-b-4 border-yellow-400">
+                <h1 class="text-4xl font-bold text-yellow-700 mb-4">Control Panel</h1>
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="bg-white p-4 rounded-lg shadow-inner border border-gray-200">
+                        <p class="text-sm font-semibold text-gray-500 uppercase">Money</p>
+                        <p id="money-display" class="text-3xl font-bold text-green-600 mono-nums">0</p>
+                        <p id="mps-display" class="text-lg text-green-500 mono-nums">+0.00 /sec</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 p-6 overflow-y-auto control-panel-scroll space-y-6">
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-3">Producers</h2>
+                    <div class="space-y-3">
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">Pumpjack</h3>
+                                <p id="pumpjack-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Output: +0.00
+                                    OPS</p>
+                                <p id="pumpjack-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost: 10
+                                </p>
+                            </div>
+                            <button id="buy-pumpjack" class="btn btn-green w-full sm:w-auto">Buy</button>
+                        </div>
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">Fracker</h3>
+                                <p id="fracker-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Output: +0.00 OPS
+                                </p>
+                                <p id="fracker-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost: 1,000
+                                </p>
+                            </div>
+                            <button id="buy-fracker" class="btn btn-green w-full sm:w-auto">Buy</button>
+                        </div>
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">Sea Rig</h3>
+                                <p id="searig-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Output: +0.00 OPS
+                                </p>
+                                <p id="searig-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost: 50,000
+                                </p>
+                            </div>
+                            <button id="buy-searig" class="btn btn-green w-full sm:w-auto">Buy</button>
+                        </div>
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">Big Boat</h3>
+                                <p id="tanker-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Output: +0.00 OPS
+                                </p>
+                                <p id="tanker-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost:
+                                    2,000,000</p>
+                            </div>
+                            <button id="buy-tanker" class="btn btn-green w-full sm:w-auto">Buy</button>
+                        </div>
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">World Pipe</h3>
+                                <p id="pipeline-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Output: +0.00
+                                    OPS</p>
+                                <p id="pipeline-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost:
+                                    100,000,000</p>
+                            </div>
+                            <button id="buy-pipeline" class="btn btn-green w-full sm:w-auto">Buy</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-3">Upgrades</h2>
+                    <div class="space-y-3">
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">Better Gloves</h3>
+                                <p id="click-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Effect: +1
+                                    Oil/click</p>
+                                <p id="click-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost: 20</p>
+                            </div>
+                            <button id="buy-click" class="btn btn-blue w-full sm:w-auto">Upgrade</button>
+                        </div>
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">Unobtanium Drill</h3>
+                                <p id="click-multi-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Effect: +100%
+                                    Click Power</p>
+                                <p id="click-multi-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost:
+                                    1,000</p>
+                            </div>
+                            <button id="buy-click-multi" class="btn btn-blue w-full sm:w-auto">Upgrade</button>
+                        </div>
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">Sharper Pointy Thing</h3>
+                                <p id="drill-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Effect: +50% All
+                                    Production</p>
+                                <p id="drill-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost: 150</p>
+                            </div>
+                            <button id="buy-drill" class="btn btn-blue w-full sm:w-auto">Upgrade</button>
+                        </div>
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">Hot Rocks</h3>
+                                <p id="drill-multi-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Effect: +100%
+                                    All Production</p>
+                                <p id="drill-multi-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost:
+                                    10,000</p>
+                            </div>
+                            <button id="buy-drill-multi" class="btn btn-blue w-full sm:w-auto">Upgrade</button>
+                        </div>
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">Slicker Pipes</h3>
+                                <p id="sell-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Effect: +20% Oil
+                                    Value</p>
+                                <p id="sell-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost: 500</p>
+                            </div>
+                            <button id="buy-sell" class="btn btn-blue w-full sm:w-auto">Upgrade</button>
+                        </div>
+                        <div class="upgrade-card">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">Shady Deals</h3>
+                                <p id="sell-multi-stats" class="text-sm text-gray-600 mono-nums">Lvl: 0 | Effect: +50%
+                                    Oil Value</p>
+                                <p id="sell-multi-cost" class="text-sm text-green-600 font-semibold mono-nums">Cost:
+                                    20,000</p>
+                            </div>
+                            <button id="buy-sell-multi" class="btn btn-blue w-full sm:w-auto">Upgrade</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-3">Discovery</h2>
+                    <div class="upgrade-card">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-purple-600">New Discovery</h3>
+                            <p class="text-sm text-gray-600">Restart to gain a permanent production bonus based on your
+                                peak money.</p>
+                            <p id="prestige-current" class="text-sm text-purple-500 font-semibold mono-nums">Current
+                                Bonus: +0%</p>
+                            <p id="prestige-next" class="text-sm text-purple-500 font-semibold mono-nums">Next Bonus on
+                                Reset: +0%</p>
+                        </div>
+                        <button id="prestige-button" class="btn btn-purple w-full sm:w-auto">Discover (Req:
+                            10M)</button>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-3">System</h2>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                        <button id="save-button" class="btn btn-gray flex-1">Save Game</button>
+                        <button id="wipe-button" class="btn btn-red flex-1">Wipe Save</button>
+                    </div>
+                    <p id="save-feedback" class="text-center text-sm text-gray-500 mt-2 h-4"></p>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- DOM ELEMENTS ---
+            const moneyDisplay = document.getElementById('money-display');
+            const mpsDisplay = document.getElementById('mps-display');
+            const clickPowerDisplay = document.getElementById('click-power-display');
+            const clickerBtn = document.getElementById('clicker-btn');
+            const clickFeedbackContainer = document.getElementById('click-feedback-container');
+            const rigArm = document.getElementById('rig-arm');
+            const saveFeedback = document.getElementById('save-feedback');
+
+            // Producer Elements
+            const buyPumpjack = document.getElementById('buy-pumpjack');
+            const pumpjackStats = document.getElementById('pumpjack-stats');
+            const pumpjackCost = document.getElementById('pumpjack-cost');
+
+            const buyFracker = document.getElementById('buy-fracker');
+            const frackerStats = document.getElementById('fracker-stats');
+            const frackerCost = document.getElementById('fracker-cost');
+
+            const buySearig = document.getElementById('buy-searig');
+            const searigStats = document.getElementById('searig-stats');
+            const searigCost = document.getElementById('searig-cost');
+
+            const buyTanker = document.getElementById('buy-tanker');
+            const tankerStats = document.getElementById('tanker-stats');
+            const tankerCost = document.getElementById('tanker-cost');
+
+            const buyPipeline = document.getElementById('buy-pipeline');
+            const pipelineStats = document.getElementById('pipeline-stats');
+            const pipelineCost = document.getElementById('pipeline-cost');
+
+            // Upgrade Elements
+            const buyClick = document.getElementById('buy-click');
+            const clickStats = document.getElementById('click-stats');
+            const clickCost = document.getElementById('click-cost');
+
+            const buyClickMulti = document.getElementById('buy-click-multi');
+            const clickMultiStats = document.getElementById('click-multi-stats');
+            const clickMultiCost = document.getElementById('click-multi-cost');
+
+            const buyDrill = document.getElementById('buy-drill');
+            const drillStats = document.getElementById('drill-stats');
+            const drillCost = document.getElementById('drill-cost');
+
+            const buyDrillMulti = document.getElementById('buy-drill-multi');
+            const drillMultiStats = document.getElementById('drill-multi-stats');
+            const drillMultiCost = document.getElementById('drill-multi-cost');
+
+            const buySell = document.getElementById('buy-sell');
+            const sellStats = document.getElementById('sell-stats');
+            const sellCost = document.getElementById('sell-cost');
+
+            const buySellMulti = document.getElementById('buy-sell-multi');
+            const sellMultiStats = document.getElementById('sell-multi-stats');
+            const sellMultiCost = document.getElementById('sell-multi-cost');
+
+            // Prestige Elements
+            const prestigeButton = document.getElementById('prestige-button');
+            const prestigeCurrent = document.getElementById('prestige-current');
+            const prestigeNext = document.getElementById('prestige-next');
+
+            // System Buttons
+            const saveButton = document.getElementById('save-button');
+            const wipeButton = document.getElementById('wipe-button');
+
+            // --- AUDIO (TONE.JS) ---
+            let synthsReady = false;
+            let clickSynth, buySynth, upgradeSynth, prestigeSynth, errorSynth;
+
+            async function initAudio() {
+                try {
+                    await Tone.start();
+                    clickSynth = new Tone.MembraneSynth({
+                        pitchDecay: 0.01,
+                        octaves: 2,
+                        envelope: { attack: 0.001, decay: 0.1, sustain: 0 }
+                    }).toDestination();
+                    buySynth = new Tone.Synth({
+                        oscillator: { type: 'triangle' },
+                        envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.1 }
+                    }).toDestination();
+                    upgradeSynth = new Tone.Synth({
+                        oscillator: { type: 'sawtooth' },
+                        envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.2 }
+                    }).toDestination();
+                    prestigeSynth = new Tone.FMSynth({
+                        envelope: { attack: 0.1, decay: 1, sustain: 0.2, release: 1 }
+                    }).toDestination();
+                    errorSynth = new Tone.Synth({
+                        oscillator: { type: 'square' },
+                        envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 }
+                    }).toDestination();
+                    synthsReady = true;
+                } catch (e) {
+                    console.error("Audio context failed to start.", e);
+                }
+            }
+
+            const playClickSound = () => {
+                if (!synthsReady) return;
+                clickSynth.triggerAttackRelease('C2', '0.1s');
+            };
+            const playBuySound = () => {
+                if (!synthsReady) return;
+                clickSynth.triggerAttackRelease('C2', '0.1s');
+
+            };
+            const playUpgradeSound = () => {
+                if (!synthsReady) return;
+                clickSynth.triggerAttackRelease('C2', '0.1s');
+            };
+            const playPrestigeSound = () => {
+                if (!synthsReady) return;
+                prestigeSynth.triggerAttackRelease('C3', '1s');
+                prestigeSynth.triggerAttackRelease('C4', '1s', Tone.now() + 0.05);
+            };
+            const playErrorSound = () => {
+                if (!synthsReady) return;
+                errorSynth.triggerAttackRelease('F#2', '0.1s');
+            };
+
+
+            // --- GAME STATE ---
+            let defaultGameData = {
+                money: 0,
+                totalMoney: 0,
+                discoveryBonus: 0,
+                producers: {
+                    pumpjack: 0,
+                    fracker: 0,
+                    searig: 0,
+                    tanker: 0,
+                    pipeline: 0
+                },
+                upgrades: {
+                    click: 0,
+                    clickMulti: 0,
+                    drill: 0,
+                    drillMulti: 0,
+                    sell: 0,
+                    sellMulti: 0
+                }
+            };
+            let gameData = { ...defaultGameData };
+
+            // --- GAME CONSTANTS (BALANCING) ---
+            const OIL_TO_MONEY_RATE = 0.5;
+            const PRESTIGE_REQ = 10_000_000;
+            const PRESTIGE_SCALE = 0.02;
+
+            const producers = {
+                pumpjack: { baseCost: 10, costScale: 1.15, baseOps: 0.1 },
+                fracker: { baseCost: 1000, costScale: 1.20, baseOps: 5 },
+                searig: { baseCost: 50000, costScale: 1.25, baseOps: 100 },
+                tanker: { baseCost: 2000000, costScale: 1.30, baseOps: 2500 },
+                pipeline: { baseCost: 100000000, costScale: 1.35, baseOps: 75000 }
+            };
+
+            const upgrades = {
+                click: { baseCost: 20, costScale: 1.8, basePower: 1 },
+                clickMulti: { baseCost: 1000, costScale: 3, multiplier: 1 },
+                drill: { baseCost: 150, costScale: 2.5, multiplier: 0.5 },
+                drillMulti: { baseCost: 10000, costScale: 4, multiplier: 1 },
+                sell: { baseCost: 500, costScale: 3, multiplier: 0.2 },
+                sellMulti: { baseCost: 20000, costScale: 5, multiplier: 0.5 }
+            };
+
+            // --- NUMBER FORMATTING ---
+            const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+
+            // Shared function for formatting
+            function formatValue(num) {
+                if (num < 1000) return num.toFixed(2); // Keep cents for small numbers
+                const exp = Math.floor(Math.log10(num) / 3);
+                const value = num / Math.pow(1000, exp);
+                return `${value.toFixed(2)}${suffixes[exp]}`;
+            }
+
+            function formatNumber(num) {
+                return formatValue(num);
+            }
+
+            function formatNumberInt(num) {
+                if (num < 1000) return num.toFixed(0); // No cents for large integers
+                const exp = Math.floor(Math.log10(num) / 3);
+                const value = num / Math.pow(1000, exp);
+                const formatted = value.toFixed(2);
+                return `${formatted.replace('.00', '')}${suffixes[exp]}`;
+            }
+
+            // --- GAME LOGIC FUNCTIONS ---
+
+            const getCost = (item, type, level) => {
+                const config = type === 'producer' ? producers[item] : upgrades[item];
+                return config.baseCost * Math.pow(config.costScale, level);
+            };
+
+            const getGlobalProdMultiplier = () => {
+                const drillBonus = 1 + gameData.upgrades.drill * upgrades.drill.multiplier;
+                const drillMultiBonus = 1 + gameData.upgrades.drillMulti * upgrades.drillMulti.multiplier;
+                const discoveryBonus = 1 + gameData.discoveryBonus;
+                return drillBonus * drillMultiBonus * discoveryBonus;
+            }
+
+            const getClickPower = () => {
+                const base = 1 + gameData.upgrades.click * upgrades.click.basePower;
+                const clickMultiBonus = 1 + gameData.upgrades.clickMulti * upgrades.clickMulti.multiplier;
+                return base * clickMultiBonus * getGlobalProdMultiplier();
+            };
+
+            const getOps = () => {
+                const pumpjackOps = gameData.producers.pumpjack * producers.pumpjack.baseOps;
+                const frackerOps = gameData.producers.fracker * producers.fracker.baseOps;
+                const searigOps = gameData.producers.searig * producers.searig.baseOps;
+                const tankerOps = gameData.producers.tanker * producers.tanker.baseOps;
+                const pipelineOps = gameData.producers.pipeline * producers.pipeline.baseOps;
+                const totalBaseOps = pumpjackOps + frackerOps + searigOps + tankerOps + pipelineOps;
+                return totalBaseOps * getGlobalProdMultiplier();
+            };
+
+            const getSellPrice = () => {
+                const baseRate = OIL_TO_MONEY_RATE;
+                const sellBonus = 1 + gameData.upgrades.sell * upgrades.sell.multiplier;
+                const sellMultiBonus = 1 + gameData.upgrades.sellMulti * upgrades.sellMulti.multiplier;
+                return baseRate * sellBonus * sellMultiBonus;
+            };
+
+            const getPrestigeBonus = (money) => {
+                if (money < PRESTIGE_REQ) return 0;
+                return Math.floor(Math.sqrt(money / PRESTIGE_REQ) * PRESTIGE_SCALE * 100) / 100;
+            };
+
+
+            // --- UI UPDATE FUNCTION ---
+            function updateUI() {
+                const currentOps = getOps();
+                const currentSellPrice = getSellPrice();
+                const effectiveMps = currentOps * currentSellPrice;
+
+                moneyDisplay.textContent = `${formatNumberInt(gameData.money)}`;
+                mpsDisplay.textContent = `+${formatNumber(effectiveMps)} /sec`;
+                clickPowerDisplay.textContent = `Manual Pump: +$${formatNumber(getClickPower() * currentSellPrice)}`;
+
+                const globalProdMult = getGlobalProdMultiplier();
+
+                // --- Producers ---
+                const pumpjackLvl = gameData.producers.pumpjack;
+                const pumpjackCostVal = getCost('pumpjack', 'producer', pumpjackLvl);
+                pumpjackStats.textContent = `Lvl: ${pumpjackLvl} | Output: +${formatNumber(pumpjackLvl * producers.pumpjack.baseOps * globalProdMult)} OPS`;
+                pumpjackCost.textContent = `Cost: ${formatNumberInt(pumpjackCostVal)}`;
+                buyPumpjack.disabled = gameData.money < pumpjackCostVal;
+
+                const frackerLvl = gameData.producers.fracker;
+                const frackerCostVal = getCost('fracker', 'producer', frackerLvl);
+                frackerStats.textContent = `Lvl: ${frackerLvl} | Output: +${formatNumber(frackerLvl * producers.fracker.baseOps * globalProdMult)} OPS`;
+                frackerCost.textContent = `Cost: ${formatNumberInt(frackerCostVal)}`;
+                buyFracker.disabled = gameData.money < frackerCostVal;
+
+                const searigLvl = gameData.producers.searig;
+                const searigCostVal = getCost('searig', 'producer', searigLvl);
+                searigStats.textContent = `Lvl: ${searigLvl} | Output: +${formatNumber(searigLvl * producers.searig.baseOps * globalProdMult)} OPS`;
+                searigCost.textContent = `Cost: ${formatNumberInt(searigCostVal)}`;
+                buySearig.disabled = gameData.money < searigCostVal;
+
+                const tankerLvl = gameData.producers.tanker;
+                const tankerCostVal = getCost('tanker', 'producer', tankerLvl);
+                tankerStats.textContent = `Lvl: ${tankerLvl} | Output: +${formatNumber(tankerLvl * producers.tanker.baseOps * globalProdMult)} OPS`;
+                tankerCost.textContent = `Cost: ${formatNumberInt(tankerCostVal)}`;
+                buyTanker.disabled = gameData.money < tankerCostVal;
+
+                const pipelineLvl = gameData.producers.pipeline;
+                const pipelineCostVal = getCost('pipeline', 'producer', pipelineLvl);
+                pipelineStats.textContent = `Lvl: ${pipelineLvl} | Output: +${formatNumber(pipelineLvl * producers.pipeline.baseOps * globalProdMult)} OPS`;
+                pipelineCost.textContent = `Cost: ${formatNumberInt(pipelineCostVal)}`;
+                buyPipeline.disabled = gameData.money < pipelineCostVal;
+
+                // --- Upgrades ---
+                const clickLvl = gameData.upgrades.click;
+                const clickCostVal = getCost('click', 'upgrade', clickLvl);
+                clickStats.textContent = `Lvl: ${clickLvl} | Effect: +${formatNumberInt(1 + clickLvl * upgrades.click.basePower)} Oil/click`;
+                clickCost.textContent = `Cost: ${formatNumberInt(clickCostVal)}`;
+                buyClick.disabled = gameData.money < clickCostVal;
+
+                const clickMultiLvl = gameData.upgrades.clickMulti;
+                const clickMultiCostVal = getCost('clickMulti', 'upgrade', clickMultiLvl);
+                clickMultiStats.textContent = `Lvl: ${clickMultiLvl} | Effect: +${(clickMultiLvl * upgrades.clickMulti.multiplier * 100).toFixed(0)}% Click Power`;
+                clickMultiCost.textContent = `Cost: ${formatNumberInt(clickMultiCostVal)}`;
+                buyClickMulti.disabled = gameData.money < clickMultiCostVal;
+
+                const drillLvl = gameData.upgrades.drill;
+                const drillCostVal = getCost('drill', 'upgrade', drillLvl);
+                drillStats.textContent = `Lvl: ${drillLvl} | Effect: +${(drillLvl * upgrades.drill.multiplier * 100).toFixed(0)}% All Production`;
+                drillCost.textContent = `Cost: ${formatNumberInt(drillCostVal)}`;
+                buyDrill.disabled = gameData.money < drillCostVal;
+
+                const drillMultiLvl = gameData.upgrades.drillMulti;
+                const drillMultiCostVal = getCost('drillMulti', 'upgrade', drillMultiLvl);
+                drillMultiStats.textContent = `Lvl: ${drillMultiLvl} | Effect: +${(drillMultiLvl * upgrades.drillMulti.multiplier * 100).toFixed(0)}% All Production`;
+                drillMultiCost.textContent = `Cost: ${formatNumberInt(drillMultiCostVal)}`;
+                buyDrillMulti.disabled = gameData.money < drillMultiCostVal;
+
+                const sellLvl = gameData.upgrades.sell;
+                const sellCostVal = getCost('sell', 'upgrade', sellLvl);
+                sellStats.textContent = `Lvl: ${sellLvl} | Effect: +${(sellLvl * upgrades.sell.multiplier * 100).toFixed(0)}% Oil Value`;
+                sellCost.textContent = `Cost: ${formatNumberInt(sellCostVal)}`;
+                buySell.disabled = gameData.money < sellCostVal;
+
+                const sellMultiLvl = gameData.upgrades.sellMulti;
+                const sellMultiCostVal = getCost('sellMulti', 'upgrade', sellMultiLvl);
+                sellMultiStats.textContent = `Lvl: ${sellMultiLvl} | Effect: +${(sellMultiLvl * upgrades.sellMulti.multiplier * 100).toFixed(0)}% Oil Value`;
+                sellMultiCost.textContent = `Cost: ${formatNumberInt(sellMultiCostVal)}`;
+                buySellMulti.disabled = gameData.money < sellMultiCostVal;
+
+                // --- Prestige ---
+                const nextBonus = getPrestigeBonus(gameData.totalMoney);
+                prestigeCurrent.textContent = `Current Bonus: +${(gameData.discoveryBonus * 100).toFixed(0)}%`;
+                prestigeNext.textContent = `Next Bonus on Reset: +${(nextBonus * 100).toFixed(0)}%`;
+                prestigeButton.disabled = gameData.totalMoney < PRESTIGE_REQ;
+                prestigeButton.textContent = `Discover (${formatNumberInt(PRESTIGE_REQ)})`;
+
+                // --- Animation Speed ---
+                const totalLevel = Object.values(gameData.producers).reduce((a, b) => a + b, 0);
+                const animationSpeed = Math.max(0.2, 5 - totalLevel * 0.05 - gameData.upgrades.drill * 0.2);
+                rigArm.style.animationDuration = `${animationSpeed}s`;
+            }
+
+
+            // --- GAME LOOP ---
+            function gameLoop(timestamp) {
+                const ops = getOps();
+                const sellPrice = getSellPrice();
+                const effectiveMps = ops * sellPrice;
+                const moneyGained = effectiveMps * 0.1;
+
+                gameData.money += moneyGained;
+                gameData.totalMoney += moneyGained;
+
+                updateUI();
+            }
+
+            // --- EVENT HANDLERS ---
+            clickerBtn.addEventListener('click', (e) => {
+                if (!synthsReady) {
+                    initAudio();
+                }
+                playClickSound();
+
+                const clickVal = getClickPower();
+                const sellPrice = getSellPrice();
+                const moneyFromClick = clickVal * sellPrice;
+                gameData.money += moneyFromClick;
+                gameData.totalMoney += moneyFromClick;
+
+                const feedback = document.createElement('span');
+                feedback.className = 'click-feedback mono-nums';
+                feedback.textContent = `+$${formatNumber(moneyFromClick)}`;
+                const rect = clickFeedbackContainer.getBoundingClientRect();
+                feedback.style.left = `${e.clientX - rect.left - 30}px`;
+                feedback.style.top = `${e.clientY - rect.top - 30}px`;
+
+                clickFeedbackContainer.appendChild(feedback);
+                setTimeout(() => feedback.remove(), 1000);
+            });
+
+            const createBuyHandler = (item, type, playSound) => {
+                return () => {
+                    const level = type === 'producer' ? gameData.producers[item] : gameData.upgrades[item];
+                    const cost = getCost(item, type, level);
+
+                    if (gameData.money >= cost) {
+                        gameData.money -= cost;
+                        if (type === 'producer') {
+                            gameData.producers[item]++;
+                        } else {
+                            gameData.upgrades[item]++;
+                        }
+                        playSound();
+                        updateUI();
+                    } else {
+                        playErrorSound();
+                    }
+                };
+            };
+
+            // Producers
+            buyPumpjack.addEventListener('click', createBuyHandler('pumpjack', 'producer', playBuySound));
+            buyFracker.addEventListener('click', createBuyHandler('fracker', 'producer', playBuySound));
+            buySearig.addEventListener('click', createBuyHandler('searig', 'producer', playBuySound));
+            buyTanker.addEventListener('click', createBuyHandler('tanker', 'producer', playBuySound));
+            buyPipeline.addEventListener('click', createBuyHandler('pipeline', 'producer', playBuySound));
+
+            // Upgrades
+            buyClick.addEventListener('click', createBuyHandler('click', 'upgrade', playUpgradeSound));
+            buyClickMulti.addEventListener('click', createBuyHandler('clickMulti', 'upgrade', playUpgradeSound));
+            buyDrill.addEventListener('click', createBuyHandler('drill', 'upgrade', playUpgradeSound));
+            buyDrillMulti.addEventListener('click', createBuyHandler('drillMulti', 'upgrade', playUpgradeSound));
+            buySell.addEventListener('click', createBuyHandler('sell', 'upgrade', playUpgradeSound));
+            buySellMulti.addEventListener('click', createBuyHandler('sellMulti', 'upgrade', playUpgradeSound));
+
+            // Prestige Handler
+            prestigeButton.addEventListener('click', () => {
+                const bonus = getPrestigeBonus(gameData.totalMoney);
+                if (bonus > 0) {
+                    playPrestigeSound();
+                    const currentBonus = gameData.discoveryBonus;
+                    gameData = { ...defaultGameData };
+                    gameData.producers = { ...defaultGameData.producers };
+                    gameData.upgrades = { ...defaultGameData.upgrades };
+                    gameData.discoveryBonus = currentBonus + bonus;
+                    saveGame();
+                    updateUI();
+                } else {
+                    playErrorSound();
+                }
+            });
+
+            // --- SAVE/LOAD ---
+            function saveGame(showFeedback = false) {
+                try {
+                    localStorage.setItem('oilTycoonSave', JSON.stringify(gameData));
+                    if (showFeedback) {
+                        saveFeedback.textContent = 'Game Saved!';
+                        setTimeout(() => saveFeedback.textContent = '', 2000);
+                    }
+                } catch (e) {
+                    console.error("Failed to save game:", e);
+                    saveFeedback.textContent = 'Save Failed!';
+                    setTimeout(() => saveFeedback.textContent = '', 2000);
+                }
+            }
+
+            function loadGame() {
+                try {
+                    const savedGame = localStorage.getItem('oilTycoonSave');
+                    if (savedGame) {
+                        const loadedData = JSON.parse(savedGame);
+                        gameData = { ...defaultGameData, ...loadedData };
+                        gameData.producers = { ...defaultGameData.producers, ...gameData.producers };
+                        gameData.upgrades = { ...defaultGameData.upgrades, ...gameData.upgrades };
+                        if (gameData.hasOwnProperty('oil')) {
+                            delete gameData.oil;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to load game, resetting:", e);
+                    gameData = { ...defaultGameData };
+                }
+            }
+
+            // System Buttons
+            saveButton.addEventListener('click', () => saveGame(true));
+
+            let wipeArmed = false;
+            wipeButton.addEventListener('click', () => {
+                if (!wipeArmed) {
+                    wipeButton.textContent = 'Click Again to Confirm Wipe';
+                    wipeButton.classList.remove('btn-red');
+                    wipeButton.classList.add('bg-yellow-500');
+                    wipeButton.classList.add('text-black');
+                    wipeArmed = true;
+                    setTimeout(() => {
+                        wipeButton.textContent = 'Wipe Save';
+                        wipeButton.classList.add('btn-red');
+                        wipeButton.classList.remove('bg-yellow-500');
+                        wipeButton.classList.remove('text-black');
+                        wipeArmed = false;
+                    }, 3000);
+                } else {
+                    gameData = {
+                        ...defaultGameData,
+                        producers: { ...defaultGameData.producers },
+                        upgrades: { ...defaultGameData.upgrades }
+                    };
+                    saveGame();
+                    location.reload();
+                }
+            });
+
+            // --- INITIALIZE GAME ---
+            loadGame();
+            setInterval(gameLoop, 100);
+            setInterval(() => saveGame(false), 10000);
+            updateUI();
+        });
+    </script>
+</body>
+
+</html>

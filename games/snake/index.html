@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snake</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <main class="wrap">
+        <header class="topbar">
+            <div class="brand">SNAKE BY TOM</div>
+            <div class="hud"> <span id="score">Score: 0</span> <span id="speed">Speed: 1x</span> </div>
+            <div class="actions"> <button id="btn-pause" aria-label="Pause (P)">⏸</button> <button id="btn-restart"
+                    aria-label="Restart (R)">↻</button> <button id="btn-settings" aria-label="Settings">⚙️</button>
+                <button id="btn-mute" aria-label="Mute (M)" data-muted="false">🔊</button>
+            </div>
+        </header>
+        <section class="board-area"> <canvas id="board" width="600" height="600" aria-label="Snake board"
+                role="img"></canvas>
+            <div id="overlay" class="overlay hidden" aria-live="polite">
+                <div class="card">
+                    <h2 id="overlay-title">Paused</h2>
+                    <p id="overlay-sub">Press P or tap Resume to continue.</p>
+                    <div class="row"> <button id="ovl-resume">Resume</button> <button id="ovl-restart">Restart</button>
+                    </div>
+                </div>
+            </div>
+        </section> <!-- Mobile controls -->
+        <section class="mobile-controls">
+            <div class="dpad"> <button class="btn-up" data-dir="up" aria-label="Up">▲</button>
+                <div class="mid"> <button class="btn-left" data-dir="left" aria-label="Left">◀</button> <button
+                        class="btn-right" data-dir="right" aria-label="Right">▶</button> </div> <button class="btn-down"
+                    data-dir="down" aria-label="Down">▼</button>
+            </div>
+        </section>
+    </main> <!-- Settings modal -->
+    <dialog id="settings">
+        <form method="dialog" class="settings-form">
+            <h3>Settings</h3> <label class="row"> <span>Wrap-around walls</span> <input type="checkbox" id="opt-wrap" />
+            </label> <label class="row"> <span>Grid size</span> <select id="opt-grid">
+                    <option value="20">20 × 20</option>
+                    <option value="24" selected>24 × 24</option>
+                    <option value="28">28 × 28</option>
+                    <option value="32">32 × 32</option>
+                </select> </label> <label class="row"> <span>Vibrate on eat (mobile)</span> <input type="checkbox"
+                    id="opt-vibrate" checked /> </label>
+            <menu class="row end"> <button id="settings-cancel">Cancel</button> <button id="settings-apply"
+                    value="default">Apply</button> </menu>
+            <p class="hint">Hotkeys: Arrows/WASD to move · P pause · R restart · M mute</p>
+        </form>
+    </dialog>
+    <script src="script.js"></script>
+</body>
+
+</html>

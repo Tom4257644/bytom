@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Egyptian Slots BT</title>
+    <style>
+        :root {
+            /* Layout scales */
+            --cell: clamp(72px, 18vw, 118px);
+            --reel-w: calc(var(--cell) + 34px);
+            --gap: clamp(8px, 2vw, 14px);
+            --chip: calc(var(--cell) * 0.58);
+
+            /* Desert palette */
+            --bgSky: #8ecae6;
+            --bgHaze: #e7dcb2;
+            --bgSand1: #ecd9a4;
+            --bgSand2: #d6bb78;
+
+            --panel1: #b48954;
+            --panel2: #8e6c3d;
+            --reelTop: #f2e6bf;
+            --reelBottom: #e2cf96;
+            --trimLight: #f7e7c1;
+            --trimDark: #5a4527;
+            --gold: #e0b84f;
+            --text: #2d2415;
+
+            --btnTop: #f1d37a;
+            --btnBottom: #d4a945;
+            --btnShadow: #7a5a22;
+
+            --pillTop: #f2e6c3;
+            --pillBottom: #e6d09b;
+
+            --coinEdge: #b88a2e;
+
+            --accentNile: #2e8f87;
+            --paylineGlow: #7fd9d0;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Inter, Roboto, Arial;
+            background:
+                radial-gradient(1200px 700px at 50% -20%, var(--bgHaze) 0%, var(--bgSand1) 40%, var(--bgSand2) 100%),
+                linear-gradient(180deg, var(--bgSky), var(--bgSand1));
+            color: var(--text);
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            -webkit-user-drag: none;
+        }
+
+        .wrap {
+            max-width: min(1040px, 96vw);
+            margin: clamp(16px, 4vw, 36px) auto;
+            padding: clamp(12px, 3vw, 22px)
+        }
+
+        .title {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .title h1 {
+            margin: 0;
+            font-size: clamp(20px, 5vw, 28px);
+            font-weight: 900;
+            letter-spacing: .4px;
+            text-shadow: 0 2px 0 #0000001f;
+            color: #3b2b17;
+        }
+
+        .doubloon {
+            width: clamp(22px, 6vw, 34px);
+            height: clamp(22px, 6vw, 34px);
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 30% 30%, #ffffff55, #0000),
+                conic-gradient(#ffe7a6, #f7cd62, #e2ad45, #f3c45a, #ffe7a6);
+            box-shadow: inset 0 0 0 2px var(--coinEdge), 0 2px 10px #0002;
+        }
+
+        .hud {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: clamp(8px, 2vw, 14px);
+            margin: 12px 0 18px;
+        }
+
+        .pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            background: linear-gradient(var(--pillTop), var(--pillBottom));
+            border: 1px solid #00000012;
+            box-shadow: inset 0 1px 0 #ffffff66, 0 8px 24px #0000001a;
+            font-size: clamp(14px, 3.4vw, 16px);
+            color: #3b2b17;
+        }
+
+        .pill .coin {
+            width: clamp(14px, 3.4vw, 18px);
+            height: clamp(14px, 3.4vw, 18px);
+            border-radius: 50%;
+            background: conic-gradient(#ffe7a6, #f7cd62, #e2ad45, #f3c45a, #ffe7a6);
+            box-shadow: inset 0 0 0 1.4px var(--coinEdge);
+        }
+
+        .pill b {
+            font-size: clamp(16px, 4vw, 18px);
+            color: var(--accentNile)
+        }
+
+        .cabinet {
+            user-select: none;
+            border-radius: 22px;
+            padding: clamp(8px, 2.4vw, 10px);
+            background: linear-gradient(var(--panel1), var(--panel2));
+            box-shadow: inset 0 2px 0 #ffffff33, inset 0 -2px 0 #00000026, 0 40px 60px #0000002b;
+            border: 1px solid var(--trimDark);
+        }
+
+        .window {
+            position: relative;
+            border-radius: 18px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #f4e9c3, #e6d29d);
+            padding: clamp(12px, 3vw, 20px);
+            border: 2px solid #6f552e;
+            box-shadow: inset 0 0 30px #0000001f;
+        }
+
+        .reels {
+            position: relative;
+            display: flex;
+            gap: var(--gap);
+            justify-content: center;
+            perspective: 600px;
+        }
+
+        .reel {
+            position: relative;
+            width: var(--reel-w);
+            height: calc(var(--cell)*3);
+            border-radius: 16px;
+            overflow: hidden;
+            background: radial-gradient(220px 120% at 50% 28%, var(--reelTop), var(--reelBottom) 68%);
+            box-shadow: inset 0 0 0 2px #00000014, inset 0 8px 24px #00000029, 0 8px 22px #00000026;
+        }
+
+        .reel:after {
+            content: "";
+            position: absolute;
+            inset: -40% -30%;
+            pointer-events: none;
+            background:
+                radial-gradient(120% 40% at 50% 0%, #ffffff66, #ffffff00),
+                linear-gradient(#0000, #0000001a 35%, #00000029 65%, #0000);
+            mix-blend-mode: screen;
+        }
+
+        .strip {
+            position: absolute;
+            left: 0;
+            right: 0;
+            will-change: transform
+        }
+
+        .cell {
+            height: var(--cell);
+            display: grid;
+            place-items: center
+        }
+
+        .chip {
+            display: grid;
+            place-items: center;
+            width: var(--chip);
+            height: var(--chip);
+            border-radius: 14px;
+            background: linear-gradient(180deg, #f2e4bf, #e2cf96);
+            box-shadow: inset 0 0 0 1px #9b7a39, 0 8px 14px #0000001f;
+            border: 1px solid #9b7a39;
+            overflow: hidden;
+        }
+
+        .chip img {
+            width: 86%;
+            height: 86%;
+            object-fit: contain;
+            image-rendering: auto;
+            filter: drop-shadow(0 1px 0 #00000022);
+        }
+
+        .payline {
+            pointer-events: none;
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            height: 6px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #77d0c8cc, #9be3dd, #77d0c8cc);
+            box-shadow: 0 0 12px var(--paylineGlow), 0 0 30px #6fcac040;
+            border: 1px solid #66c5bb;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            padding: clamp(10px, 2.6vw, 16px)
+        }
+
+        .btn {
+            cursor: pointer;
+            border: none;
+            color: #3b2b17;
+            font-weight: 900;
+            letter-spacing: .5px;
+            font-size: clamp(16px, 4.2vw, 20px);
+            padding: clamp(10px, 2.8vw, 16px) clamp(18px, 5vw, 34px);
+            border-radius: 999px;
+            background:
+                radial-gradient(180% 100% at 50% 0%, #ffffff55, #0000),
+                linear-gradient(180deg, var(--btnTop), var(--btnBottom));
+            box-shadow: inset 0 1px 0 #ffffffaa, 0 10px 0 var(--btnShadow), 0 14px 30px #0000002b;
+            transition: transform .06s ease;
+        }
+
+        .btn:active {
+            transform: translateY(2px)
+        }
+
+        .btn[disabled] {
+            opacity: .55;
+            filter: grayscale(.1);
+            cursor: not-allowed
+        }
+
+        .result {
+            min-height: 28px;
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: .3px;
+            font-size: clamp(14px, 3.6vw, 18px);
+            color: var(--accentNile);
+        }
+
+        .win .chip {
+            animation: glow 1s ease both
+        }
+
+        @keyframes glow {
+            0% {
+                box-shadow: inset 0 0 0 2px #2e8f87, 0 8px 14px #0000001f
+            }
+
+            70% {
+                box-shadow: inset 0 0 0 2px #2e8f87, 0 0 0 8px #7fd9d055, 0 18px 40px #00000029
+            }
+
+            100% {
+                box-shadow: inset 0 0 0 2px #2e8f87, 0 6px 16px #0000001f
+            }
+        }
+
+        .help {
+            margin-top: 10px;
+            opacity: .95;
+            font-size: clamp(12px, 3.2vw, 14px);
+            color: #4a3a24;
+        }
+
+        .help strong {
+            color: var(--accentNile)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="title">
+            <div class="doubloon"></div>
+            <h1>Egyption Slots BT</h1>
+        </div>
+
+        <div class="hud">
+            <div class="pill">
+                <div class="coin"></div><span>Balance:</span> <b id="balance">100</b>
+            </div>
+            <div class="pill">Last win: <b id="lastwin">0</b></div>
+        </div>
+
+        <div class="cabinet">
+            <div class="window">
+                <div class="reels" id="reels"></div>
+                <div class="payline" id="payline"></div>
+            </div>
+            <div class="controls"><button id="spin" class="btn">SPIN</button></div>
+        </div>
+
+        <div class="result" id="result"></div>
+        <div class="help">
+            Goal: match <strong>3+</strong> icons on the <strong>center payline</strong> left → right.
+            Wild substitutes are Pyramids. <em>(Gaps allowed)</em>.
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            // ---------- Config ----------
+            const WIN_RATE_BOOST = 0.33; // ~20% of spins are pre-biased to produce a win
+            const BOOST_CAN_BE_4OAK = 0.35; // on boosted spins, ~35% try for 4-of-a-kind instead of 3
+            const REELS = 5, BASE_LEN = 22;
+
+            // ---------- Symbols: 1.png ... 8.png (8 is WILD) ----------
+            const SYMBOLS = [
+                { name: '1', src: '1.png' },
+                { name: '2', src: '2.png' },
+                { name: '3', src: '3.png' },
+                { name: '4', src: '4.png' },
+                { name: '5', src: '5.png' },
+                { name: '6', src: '6.png' },
+                { name: '7', src: '7.png' },
+                { name: '8', src: '8.png', wild: true } // wild
+            ];
+
+            // ---------- Elements / State ----------
+            const reelsEl = document.getElementById('reels');
+            const spinBtn = document.getElementById('spin');
+            const balanceEl = document.getElementById('balance');
+            const lastWinEl = document.getElementById('lastwin');
+            const resultEl = document.getElementById('result');
+            const paylineEl = document.getElementById('payline');
+
+            let CELL = 100;
+            let balance = 100;
+            let spinning = false;
+
+            // ---------- Utils ----------
+            const lerp = (a, b, t) => a + (b - a) * t;
+            const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+            const remap = (x, inMin, inMax, outMin, outMax) => lerp(outMin, outMax, clamp((x - inMin) / (inMax - inMin), 0, 1));
+            const randInt = (n) => Math.floor(Math.random() * n);
+
+            function measureCellPx() {
+                const probe = document.createElement('div');
+                probe.className = 'cell';
+                probe.style.position = 'absolute';
+                probe.style.visibility = 'hidden';
+                probe.innerHTML = `<div class="chip"><img alt="" src="${SYMBOLS[0].src}"></div>`;
+                document.body.appendChild(probe);
+                const h = probe.getBoundingClientRect().height || 100;
+                document.body.removeChild(probe);
+                return h;
+            }
+
+            function layout() {
+                CELL = measureCellPx();
+                // Adaptive chip size
+                const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+                const scale = remap(vw, 320, 1200, 0.50, 0.68);
+                const chipPx = Math.round(CELL * scale);
+                document.documentElement.style.setProperty('--chip', chipPx + 'px');
+                // Center payline
+                const top = reelsEl.offsetTop + (CELL * 1.5) - 3;
+                paylineEl.style.top = top + 'px';
+            }
+
+            layout();
+            if ('ResizeObserver' in window) {
+                const ro = new ResizeObserver(layout);
+                ro.observe(document.body);
+            } else {
+                window.addEventListener('resize', layout);
+                window.addEventListener('orientationchange', layout);
+            }
+
+            // ---------- Build reels (triple strip for continuous wrap) ----------
+            const reels = [];
+            for (let r = 0; r < REELS; r++) {
+                const reel = document.createElement('div'); reel.className = 'reel';
+                const strip = document.createElement('div'); strip.className = 'strip';
+                reel.appendChild(strip); reelsEl.appendChild(reel);
+
+                // Slight symbol bias to stabilize boosted targets (more frequent 1–4 and a touch more wilds).
+                const weights = [1.25, 1.25, 1.25, 1.25, 1.0, 1.0, 1.0, 1.15];
+                const wsum = weights.reduce((a, b) => a + b, 0);
+                function weightedPick() {
+                    let t = Math.random() * wsum;
+                    for (let i = 0; i < weights.length; i++) {
+                        if ((t -= weights[i]) <= 0) return i;
+                    }
+                    return weights.length - 1;
+                }
+
+                const base = Array.from({ length: BASE_LEN }, () => weightedPick());
+                const order = [...base, ...base, ...base];
+
+                order.forEach(idx => {
+                    const c = document.createElement('div'); c.className = 'cell';
+                    const chip = document.createElement('div'); chip.className = 'chip';
+                    const img = document.createElement('img');
+                    img.alt = SYMBOLS[idx].name;
+                    img.src = SYMBOLS[idx].src;
+                    chip.appendChild(img); c.appendChild(chip); strip.appendChild(c);
+                });
+
+                const start = -CELL * (BASE_LEN + Math.floor(Math.random() * BASE_LEN));
+                strip.style.transform = `translateY(${start}px)`;
+                reels.push({ reel, strip, order, offset: start });
+            }
+
+            // Helpers to find positions of a symbol on a reel strip
+            function indicesOfSymbol(order, symbolIdx) {
+                const out = [];
+                for (let i = 0; i < order.length; i++) if (order[i] === symbolIdx) out.push(i);
+                return out;
+            }
+
+            // ---------- Spin ----------
+            spinBtn.addEventListener('click', () => {
+                if (spinning) return;
+                if (balance <= 0) { setText('No coins left.'); return; }
+
+                layout();
+
+                spinning = true; spinBtn.disabled = true;
+                setText(''); updateBalance(-1);
+                document.querySelectorAll('.win').forEach(x => x.classList.remove('win'));
+
+                // Choose where each reel will land (index into the reel's 'order')
+                let lands = Array.from({ length: REELS }, () => BASE_LEN + 1 + Math.floor(Math.random() * (BASE_LEN - 2)));
+
+                // --- BOOSTED WIN LOGIC (≈20% spins) ---
+                if (Math.random() < WIN_RATE_BOOST) {
+                    // Pick a non-wild target symbol that exists on all reels
+                    const candidateSymbols = [0, 1, 2, 3, 4, 5, 6]; // exclude wild from target choice
+                    const target = candidateSymbols[randInt(candidateSymbols.length)];
+
+                    // Decide 3 or 4 of a kind on boosted spins
+                    const needCount = Math.random() < BOOST_CAN_BE_4OAK ? 4 : 3;
+
+                    // Pick which reels will show the target
+                    const reelIdxs = Array.from({ length: REELS }, (_, i) => i);
+                    // Shuffle
+                    for (let i = reelIdxs.length - 1; i > 0; i--) {
+                        const j = randInt(i + 1);[reelIdxs[i], reelIdxs[j]] = [reelIdxs[j], reelIdxs[i]];
+                    }
+                    const chosen = reelIdxs.slice(0, needCount);
+
+                    // For chosen reels, set landing so center row shows the target symbol.
+                    chosen.forEach(i => {
+                        const spots = indicesOfSymbol(reels[i].order, target);
+                        lands[i] = spots.length ? spots[randInt(spots.length)] : lands[i];
+                    });
+
+                    // Occasionally turn one of the remaining reels into a wild on the payline to help extend wins.
+                    const leftover = reelIdxs.slice(needCount);
+                    if (leftover.length && Math.random() < 0.35) {
+                        const wildIdx = 7; // SYMBOLS[7] is wild
+                        const i = leftover[randInt(leftover.length)];
+                        const spots = indicesOfSymbol(reels[i].order, wildIdx);
+                        if (spots.length) lands[i] = spots[randInt(spots.length)];
+                    }
+                }
+
+                const timings = Array.from({ length: REELS }, (_, i) => ({
+                    delay: i * 140, anticipate: 120, accel: 380 + 60 * i, cruise: 460 + 150 * i, brake: 720 + 220 * i, settle: 140
+                }));
+
+                const vmax = 1.32 * CELL, startT = performance.now();
+                const span = CELL * (BASE_LEN * 3);
+                const finalOffsetFor = i => -CELL * (lands[i] - 1);
+
+                function frame(now) {
+                    let allDone = true;
+
+                    for (let i = 0; i < REELS; i++) {
+                        const r = reels[i], tm = timings[i];
+                        const t = Math.max(0, now - startT - tm.delay);
+                        const total = tm.anticipate + tm.accel + tm.cruise + tm.brake + tm.settle;
+
+                        if (t >= total) {
+                            const final = finalOffsetFor(i);
+                            r.offset = final;
+                            r.strip.style.transform = `translateY(${r.offset}px)`;
+                            r.strip.style.filter = '';
+                            continue;
+                        }
+                        allDone = false;
+
+                        let dy = 0;
+                        if (t < tm.anticipate) {
+                            const p = t / tm.anticipate; dy = Math.sin(p * Math.PI) * (CELL * 0.12);
+                        } else if (t < tm.anticipate + tm.accel) {
+                            const p = (t - tm.anticipate) / tm.accel; dy = -vmax * (0.3 + 0.7 * p);
+                        } else if (t < tm.anticipate + tm.accel + tm.cruise) {
+                            dy = -vmax;
+                        } else if (t < tm.anticipate + tm.accel + tm.cruise + tm.brake) {
+                            const p = (t - tm.anticipate - tm.accel - tm.cruise) / tm.brake;
+                            const target = finalOffsetFor(i);
+                            const remaining = target - r.offset;
+                            const smooth = p * p * (3 - 2 * p);
+                            dy = remaining * 0.16 * (1 - smooth);
+                        } else {
+                            const p = (t - tm.anticipate - tm.accel - tm.cruise - tm.brake) / tm.settle;
+                            dy = Math.sin(p * Math.PI) * 6 * (1 - p);
+                        }
+
+                        r.offset += dy;
+
+                        if (r.offset < -span) r.offset += span;
+                        if (r.offset > 0) r.offset -= span;
+
+                        const blur = Math.min(3, Math.abs(dy) / CELL * 6);
+                        r.strip.style.filter = `blur(${blur}px) brightness(${1 + Math.min(.1, Math.abs(dy) / CELL)})`;
+                        r.strip.style.transform = `translateY(${r.offset}px)`;
+                    }
+
+                    if (!allDone) requestAnimationFrame(frame); else finish();
+                }
+
+                requestAnimationFrame(frame);
+
+                function finish() {
+                    reels.forEach(r => r.strip.style.filter = '');
+                    const centerIdx = reels.map((r, i) => r.order[lands[i]]);
+
+                    const { win, count, mask } = evaluateWithGaps(centerIdx);
+
+                    for (let i = 0; i < REELS; i++) {
+                        if (mask[i]) {
+                            const cell = reels[i].strip.children[lands[i]];
+                            if (cell) cell.classList.add('win');
+                        }
+                    }
+
+                    if (win > 0) {
+                        updateBalance(win); lastWinEl.textContent = win;
+                        const plural = count === 1 ? 'icon' : 'icons';
+                        celebrate(`${count} ${plural}!  +${win}`);
+                    } else {
+                        lastWinEl.textContent = 0;
+                        setText(['No win this time.', 'Nothing hit.', 'Spin again?'][Math.floor(Math.random() * 3)]);
+                    }
+
+                    spinning = false; spinBtn.disabled = false;
+                }
+            });
+
+            // ---------- UI helpers ----------
+            function updateBalance(d) { balance = Math.max(0, balance + d); balanceEl.textContent = balance; }
+            function setText(t) { resultEl.style.color = '#5ccdc5'; resultEl.textContent = t; }
+            function celebrate(t) {
+                resultEl.style.color = '#2e8f87'; resultEl.textContent = t;
+                resultEl.animate([{ transform: 'scale(.96)' }, { transform: 'scale(1)' }], { duration: 420, easing: 'cubic-bezier(.2,.9,.1,1)' });
+            }
+
+            // ---------- Evaluator: gaps allowed, wilds substitute, rightmost tiebreak ----------
+            function evaluateWithGaps(symbolIndices) {
+                const arr = symbolIndices.map(i => SYMBOLS[i]);
+                const labels = [...new Set(arr.filter(s => !s.wild).map(s => s.name))];
+
+                let bestCount = 0, bestMask = new Array(arr.length).fill(false), bestLabel = 'Any', bestStart = -1;
+
+                for (const label of labels) {
+                    const mask = new Array(arr.length).fill(false);
+                    let count = 0, firstIdx = -1;
+                    for (let i = 0; i < arr.length; i++) {
+                        const s = arr[i];
+                        if (s.wild || s.name === label) {
+                            mask[i] = true; count++; if (firstIdx === -1) firstIdx = i;
+                        }
+                    }
+                    if (count > bestCount || (count === bestCount && count >= 3 && firstIdx > bestStart)) {
+                        bestCount = count; bestMask = mask; bestLabel = label; bestStart = firstIdx;
+                    }
+                }
+
+                // All-wilds case
+                if (bestCount < 3) {
+                    const wildMask = new Array(arr.length).fill(false);
+                    let count = 0, firstIdx = -1;
+                    for (let i = 0; i < arr.length; i++) {
+                        if (arr[i].wild) { wildMask[i] = true; count++; if (firstIdx === -1) firstIdx = i; }
+                    }
+                    if (count >= 3) { bestCount = count; bestMask = wildMask; bestLabel = 'Any'; bestStart = firstIdx; }
+                }
+
+                // Payouts
+                let win = 0, payCount = bestCount;
+                if (payCount >= 5) win = 20;
+                else if (payCount === 4) win = 8;
+                else if (payCount === 3) win = 3;
+                else { payCount = 0; bestMask = new Array(arr.length).fill(false); }
+
+                return { win, count: payCount, label: bestLabel, mask: bestMask };
+            }
+        })();
+    </script>
+</body>
+
+</html>
