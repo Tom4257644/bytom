@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TRON — 1 Player</title>
+    <style>
+        :root {
+            --bg: #0a0f14;
+            --grid: #0f1a24;
+            --p1: #32e6ff;
+            --ai: #ff4d6d;
+            --ui: #c9d3dc;
+            --accent: #8bd8bd;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: var(--ui);
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif
+        }
+
+        .wrap {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 14px
+        }
+
+        header {
+            width: min(1100px, 96vw);
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(18px, 2.6vw, 22px);
+            letter-spacing: .06em;
+            color: var(--accent)
+        }
+
+        .hud {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            font-weight: 600
+        }
+
+        .hud span {
+            background: #0d1620;
+            border: 1px solid #172534;
+            padding: 6px 10px;
+            border-radius: 10px
+        }
+
+        .board-wrap {
+            position: relative;
+            width: min(1100px, 96vw);
+            aspect-ratio: 5/2.5;
+            /* shorter screen (was 5/3) */
+            border: 1px solid #223446;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .45), inset 0 0 0 2px #0d1822;
+            overflow: hidden;
+        }
+
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: radial-gradient(120% 120% at 50% 50%, #0d1720 0%, #081018 70%, #04070b 100%)
+        }
+
+        .grid-lines {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: .25;
+            background:
+                linear-gradient(#0e1a24 1px, transparent 1px) 0 0/100% calc(100%/30),
+                linear-gradient(90deg, #0e1a24 1px, transparent 1px) 0 0/calc(100%/50) 100%;
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, .55);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .panel {
+            background: #0d1620;
+            border: 1px solid #213243;
+            padding: 18px 20px;
+            border-radius: 14px;
+            max-width: 92%;
+            text-align: center
+        }
+
+        .panel h2 {
+            margin: .2rem 0 .6rem 0
+        }
+
+        .panel p {
+            margin: .4rem 0 .8rem 0;
+            color: #b9c6d0
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap
+        }
+
+        button {
+            cursor: pointer;
+            background: #122232;
+            color: var(--ui);
+            border: 1px solid #284055;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-weight: 700
+        }
+
+        button:hover {
+            filter: brightness(1.15)
+        }
+
+        .mobile-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 54px);
+            gap: 10px;
+            width: min(420px, 92vw)
+        }
+
+        .mobile-controls .sp {
+            visibility: hidden
+        }
+
+        .mobile-controls button {
+            border-radius: 14px
+        }
+
+        .legend {
+            font-size: .9rem;
+            opacity: .8
+        }
+
+        @media (max-width:700px) {
+            .mobile-controls {
+                grid-template-rows: repeat(2, 48px)
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <h1>TRON — 1P (You vs AI)</h1>
+            <div class="hud">
+                <span id="score">Score: 0</span>
+                <span id="time">Time: 0.0s</span>
+                <span id="speed">Speed: 1.0x</span>
+            </div>
+        </header>
+
+        <div class="board-wrap" id="boardWrap">
+            <canvas id="game"></canvas>
+            <div class="grid-lines"></div>
+
+            <div class="overlay" id="overlay">
+                <div class="panel">
+                    <h2 id="ovlTitle">Lightcycle Ready</h2>
+                    <p id="ovlMsg">WASD / Arrow keys. Don’t hit walls or trails.
+                        <br>Mobile: use the D-pad or swipe.
+                    </p>
+                    <div class="row">
+                        <button id="btnStart">Start</button>
+                        <button id="btnSlow">Slow</button>
+                        <button id="btnFast">Fast</button>
+                    </div>
+                    <p class="legend" id="ovlLegend">Tip: the AI picks the safest route each tick.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mobile-controls" id="dpad">
+            <span class="sp"></span>
+            <button id="btnUp">▲</button>
+            <span class="sp"></span>
+            <button id="btnLeft">◀</button>
+            <button id="btnDown">▼</button>
+            <button id="btnRight">▶</button>
+        </div>
+    </div>
+
+    <script>
+        /* TRON — 1 Player (no libs) */
+        (() => {
+            // ---------- Config ----------
+            const COLS = 50, ROWS = 30;          // grid
+            const BASE_TPS = 14;                  // ticks per second (normal)
+            const FAST_TPS = 22;                  // fast preset
+            const SLOW_TPS = 9;                   // slow preset
+            const SPEEDUP_EVERY = 12;             // speed up every N seconds
+            const SPEEDUP_FACTOR = 1.06;          // multiplicative
+            const COLORS = { empty: 0, p1: 1, ai: 2 };
+
+            // ---------- DOM ----------
+            const canvas = document.getElementById('game');
+            const ctx = canvas.getContext('2d');
+            const overlay = document.getElementById('overlay');
+            const ovlTitle = document.getElementById('ovlTitle');
+            const ovlMsg = document.getElementById('ovlMsg');
+            const ovlLegend = document.getElementById('ovlLegend');
+            const btnStart = document.getElementById('btnStart');
+            const btnFast = document.getElementById('btnFast');
+            const btnSlow = document.getElementById('btnSlow');
+            const scoreEl = document.getElementById('score');
+            const timeEl = document.getElementById('time');
+            const speedEl = document.getElementById('speed');
+            const dpad = {
+                up: document.getElementById('btnUp'),
+                left: document.getElementById('btnLeft'),
+                down: document.getElementById('btnDown'),
+                right: document.getElementById('btnRight')
+            };
+
+            // Resize canvas to container size while keeping grid aspect
+            function fitCanvas() {
+                const wrap = document.getElementById('boardWrap');
+                const w = wrap.clientWidth, h = wrap.clientHeight;
+                canvas.width = w; canvas.height = h;
+                cellW = w / COLS; cellH = h / ROWS;
+            }
+            let cellW = 0, cellH = 0;
+            new ResizeObserver(fitCanvas).observe(document.getElementById('boardWrap'));
+            window.addEventListener('orientationchange', () => setTimeout(fitCanvas, 200));
+
+            // ---------- Game State ----------
+            let grid, p1, ai, running = false, tps = BASE_TPS, tickTimer = null, startTime = 0, elapsed = 0, steps = 0, lastSpeedup = 0;
+            const DIRS = { Up: [0, -1], Right: [1, 0], Down: [0, 1], Left: [-1, 0] };
+            const ORDER = ['Up', 'Right', 'Down', 'Left'];
+            const opposite = d => ({ Up: 'Down', Down: 'Up', Left: 'Right', Right: 'Left' })[d];
+
+            function makeGrid() {
+                const a = new Array(ROWS);
+                for (let y = 0; y < ROWS; y++) { a[y] = new Uint8Array(COLS); }
+                return a;
+            }
+
+            function placeInitial() {
+                // Player left-middle going right, AI right-middle going left
+                p1 = { x: Math.floor(COLS * 0.25), y: Math.floor(ROWS / 2), dir: 'Right', nextDir: 'Right', color: COLORS.p1, alive: true };
+                ai = { x: Math.floor(COLS * 0.75), y: Math.floor(ROWS / 2), dir: 'Left', color: COLORS.ai, alive: true };
+                grid[p1.y][p1.x] = COLORS.p1;
+                grid[ai.y][ai.x] = COLORS.ai;
+            }
+
+            function reset(speedPreset = BASE_TPS) {
+                grid = makeGrid();
+                placeInitial();
+                tps = speedPreset;
+                steps = 0;
+                elapsed = 0;
+                lastSpeedup = 0;
+                updateHUD();
+                fitCanvas();
+            }
+
+            // ---------- Input ----------
+            const KEY_TO_DIR = {
+                ArrowUp: 'Up', KeyW: 'Up',
+                ArrowDown: 'Down', KeyS: 'Down',
+                ArrowLeft: 'Left', KeyA: 'Left',
+                ArrowRight: 'Right', KeyD: 'Right'
+            };
+            window.addEventListener('keydown', e => {
+                const d = KEY_TO_DIR[e.code];
+                if (!d) return;
+                e.preventDefault();
+                // prevent instant reverse
+                if (opposite(p1.dir) === d) return;
+                p1.nextDir = d;
+            }, { passive: false });
+
+            // Touch swipe
+            (function setupSwipe() {
+                let sx = 0, sy = 0, touch = false;
+                canvas.addEventListener('touchstart', e => {
+                    const t = e.changedTouches[0];
+                    sx = t.clientX; sy = t.clientY; touch = true;
+                }, { passive: true });
+                canvas.addEventListener('touchend', e => {
+                    if (!touch) return;
+                    const t = e.changedTouches[0];
+                    const dx = t.clientX - sx, dy = t.clientY - sy;
+                    if (Math.hypot(dx, dy) < 20) return;
+                    const adx = Math.abs(dx), ady = Math.abs(dy);
+                    let d = p1.dir;
+                    if (adx > ady) d = dx > 0 ? 'Right' : 'Left'; else d = dy > 0 ? 'Down' : 'Up';
+                    if (opposite(p1.dir) !== d) p1.nextDir = d;
+                    touch = false;
+                }, { passive: true });
+            })();
+
+            // D-pad
+            dpad.up.addEventListener('click', () => { if (opposite(p1.dir) !== 'Up') p1.nextDir = 'Up'; });
+            dpad.down.addEventListener('click', () => { if (opposite(p1.dir) !== 'Down') p1.nextDir = 'Down'; });
+            dpad.left.addEventListener('click', () => { if (opposite(p1.dir) !== 'Left') p1.nextDir = 'Left'; });
+            dpad.right.addEventListener('click', () => { if (opposite(p1.dir) !== 'Right') p1.nextDir = 'Right'; });
+
+            // ---------- AI ----------
+            function inBounds(x, y) { return x >= 0 && y >= 0 && x < COLS && y < ROWS; }
+            function isEmpty(x, y) { return inBounds(x, y) && grid[y][x] === COLORS.empty; }
+
+            // Score each possible turn by how far it can go straight + local space
+            function aiChooseDir() {
+                const options = ['Up', 'Right', 'Down', 'Left'].filter(d => d !== opposite(ai.dir));
+                let best = ai.dir, bestScore = -Infinity;
+                for (const d of options) {
+                    const [dx, dy] = DIRS[d];
+                    let x = ai.x + dx, y = ai.y + dy;
+                    if (!isEmpty(x, y)) continue; // illegal
+                    // straight ray length
+                    let straight = 0;
+                    while (isEmpty(x, y)) { straight++; x += dx; y += dy; }
+                    // local freedom (count empty neighbors around first step)
+                    x = ai.x + dx; y = ai.y + dy;
+                    let free = 0;
+                    for (const k of ORDER) {
+                        const [kx, ky] = DIRS[k];
+                        if (isEmpty(x + kx, y + ky)) free++;
+                    }
+                    // mild bias to keep current dir to avoid jitter
+                    const inertia = (d === ai.dir) ? 0.5 : 0;
+                    // add a small randomness to avoid loops
+                    const jitter = Math.random() * 0.3;
+                    const score = straight * 1.0 + free * 0.8 + inertia + jitter;
+                    if (score > bestScore) { bestScore = score; best = d; }
+                }
+                // If no forward-like safe option, try the reverse as last resort (can still die)
+                if (bestScore === -Infinity) {
+                    const rev = opposite(ai.dir);
+                    const [dx, dy] = DIRS[rev];
+                    if (isEmpty(ai.x + dx, ai.y + dy)) return rev;
+                    // stuck: any empty around?
+                    for (const d of ORDER) {
+                        const [dx2, dy2] = DIRS[d];
+                        if (isEmpty(ai.x + dx2, ai.y + dy2)) return d;
+                    }
+                    return ai.dir; // doomed
+                }
+                return best;
+            }
+
+            // ---------- Game Loop ----------
+            function start() {
+                running = true;
+                overlay.style.display = 'none';
+                startTime = performance.now();
+                scheduleTick();
+            }
+            function stop(gameOverMsg) {
+                running = false;
+                clearTimeout(tickTimer);
+                ovlTitle.textContent = 'Game Over';
+                ovlMsg.innerHTML = gameOverMsg || 'Try a different speed or strategy.';
+                ovlLegend.textContent = 'Press Start to play again.';
+                overlay.style.display = 'flex';
+            }
+            function scheduleTick() {
+                clearTimeout(tickTimer);
+                const delay = 1000 / Math.max(6, tps); // clamp low
+                tickTimer = setTimeout(() => { tick(); if (running) scheduleTick(); }, delay);
+            }
+
+            function moveEntity(ent, nextDirOpt) {
+                if (nextDirOpt) ent.dir = nextDirOpt;
+                const [dx, dy] = DIRS[ent.dir];
+                const nx = ent.x + dx, ny = ent.y + dy;
+                if (!inBounds(nx, ny) || grid[ny][nx] !== COLORS.empty) {
+                    ent.alive = false;
+                    return;
+                }
+                ent.x = nx; ent.y = ny;
+                grid[ny][nx] = ent.color;
+            }
+
+            function tick() {
+                steps++;
+                const now = performance.now();
+                elapsed = (now - startTime) / 1000;
+
+                // speed up over time
+                if (elapsed - lastSpeedup >= SPEEDUP_EVERY) {
+                    tps *= SPEEDUP_FACTOR;
+                    lastSpeedup = elapsed;
+                }
+
+                // Apply buffered player dir
+                if (p1.nextDir && p1.nextDir !== opposite(p1.dir)) {
+                    // allow turning only if the next cell is free (prevents corner self-bite feeling)
+                    const [dx, dy] = DIRS[p1.nextDir];
+                    if (isEmpty(p1.x + dx, p1.y + dy)) p1.dir = p1.nextDir;
+                }
+
+                // AI chooses
+                const aiChoice = aiChooseDir();
+
+                // Move both; classic simultaneous update → move player first, then AI, but collisions consider pre-filled grid.
+                moveEntity(p1, null);
+                moveEntity(ai, aiChoice);
+
+                // End conditions
+                if (!p1.alive && !ai.alive) { stop('Draw! You crashed together.'); }
+                else if (!p1.alive) { stop('You crashed. The AI survives.'); }
+                else if (!ai.alive) { stop('Nice! The AI crashed. You win.'); }
+
+                updateHUD();
+                render();
+            }
+
+            // ---------- Render ----------
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Trails
+                for (let y = 0; y < ROWS; y++) {
+                    for (let x = 0; x < COLS; x++) {
+                        const v = grid[y][x];
+                        if (v === COLORS.empty) continue;
+                        ctx.beginPath();
+                        ctx.rect(x * cellW, y * cellH, cellW, cellH);
+                        ctx.fillStyle = (v === COLORS.p1) ? 'rgba(50,230,255,0.95)' : 'rgba(255,77,109,0.95)';
+                        ctx.fill();
+                    }
+                }
+                // Cycles (draw bright heads)
+                drawCycle(p1, '#b8f7ff', '#32e6ff');
+                drawCycle(ai, '#ffd0d8', '#ff4d6d');
+            }
+
+            function drawCycle(ent, glow, core) {
+                if (!ent.alive) return;
+                const x = ent.x * cellW, y = ent.y * cellH;
+                const pad = Math.max(1, Math.min(cellW, cellH) * 0.1);
+                // glow
+                ctx.fillStyle = glow;
+                ctx.globalAlpha = 0.35;
+                ctx.fillRect(x - pad, y - pad, cellW + pad * 2, cellH + pad * 2);
+                ctx.globalAlpha = 1;
+                // core
+                ctx.fillStyle = core;
+                ctx.fillRect(x + 2, y + 2, Math.max(1, cellW - 4), Math.max(1, cellH - 4));
+                // direction accent
+                ctx.fillStyle = '#ffffff';
+                const w = Math.max(2, Math.min(cellW, cellH) * 0.15);
+                if (ent.dir === 'Up') ctx.fillRect(x + cellW * 0.35, y + 1, cellW * 0.3, w);
+                if (ent.dir === 'Down') ctx.fillRect(x + cellW * 0.35, y + cellH - w - 1, cellW * 0.3, w);
+                if (ent.dir === 'Left') ctx.fillRect(x + 1, y + cellH * 0.35, w, cellH * 0.3);
+                if (ent.dir === 'Right') ctx.fillRect(x + cellW - w - 1, y + cellH * 0.35, w, cellH * 0.3);
+            }
+
+            // ---------- HUD ----------
+            function updateHUD() {
+                // Score = time survived * 10, rounded
+                const score = Math.floor(elapsed * 10);
+                scoreEl.textContent = `Score: ${score}`;
+                timeEl.textContent = `Time: ${elapsed.toFixed(1)}s`;
+                speedEl.textContent = `Speed: ${(tps / BASE_TPS).toFixed(1)}x`;
+            }
+
+            // ---------- Buttons ----------
+            btnStart.addEventListener('click', () => { reset(); start(); });
+            btnFast.addEventListener('click', () => { reset(FAST_TPS); start(); });
+            btnSlow.addEventListener('click', () => { reset(SLOW_TPS); start(); });
+
+            // ---------- Boot ----------
+            reset();
+            render();
+        })();
+    </script>
+</body>
+
+</html>
