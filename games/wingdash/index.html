@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Wing Dash</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <main class="wrap">
+        <header class="topbar">
+            <div class="brand">Wing Dash</div>
+            <div class="hud">
+                <span id="score">0</span>
+                <span class="sep">|</span>
+                <span>Best: <span id="best">0</span></span>
+            </div>
+            <div class="actions">
+                <button id="btn-pause" aria-label="Pause (P)">⏸</button>
+                <button id="btn-restart" aria-label="Restart (R)">↻</button>
+            </div>
+        </header>
+
+        <section class="stage">
+            <canvas id="game"></canvas>
+
+            <!-- Overlays -->
+            <div id="overlay" class="overlay show">
+                <div class="panel">
+                    <h1>Wing Dash</h1>
+                    <p>Tap / Click / Space to flap</p>
+                    <p>Pass the gaps. Avoid pipes.</p>
+                    <div class="tiny">P = Pause · R = Restart</div>
+                    <button id="btn-play">Play</button>
+                </div>
+            </div>
+
+            <div id="overlay-pause" class="overlay">
+                <div class="panel">
+                    <h2>Paused</h2>
+                    <button id="btn-resume">Resume</button>
+                    <button id="btn-restart2">Restart</button>
+                </div>
+            </div>
+
+            <div id="overlay-gameover" class="overlay">
+                <div class="panel">
+                    <h2>Game Over</h2>
+                    <p>Score: <span id="final-score">0</span></p>
+                    <p>Best: <span id="final-best">0</span></p>
+                    <button id="btn-play-again">Play again</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
