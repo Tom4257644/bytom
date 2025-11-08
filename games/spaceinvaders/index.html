@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Space Invaders (Embed Safe)</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <!-- Root wrapper is scoped so host CSS can't interfere -->
+    <div class="si" id="si-root">
+        <main class="wrap">
+            <header class="topbar">
+                <div class="brand">SPACE INVADERS</div>
+                <div class="hud">
+                    <span id="score">Score: 0</span>
+                    <span id="lives">Lives: 3</span>
+                    <span id="wave">Wave: 1</span>
+                </div>
+                <div class="actions">
+                    <button id="btn-pause" aria-label="Pause (P)">⏸</button>
+                    <button id="btn-restart" aria-label="Restart (R)">↻</button>
+                </div>
+            </header>
+
+            <section class="board-wrap">
+                <canvas id="board" aria-label="Game board" role="img"></canvas>
+
+                <div id="overlay" class="overlay hidden">
+                    <div class="panel">
+                        <h1 id="ovl-title">SPACE INVADERS</h1>
+                        <p id="ovl-sub">← → or A/D to move • Space to shoot • P to pause</p>
+                        <div class="ovl-buttons">
+                            <button id="ovl-start">Play</button>
+                            <button id="ovl-continue" class="hidden">Continue</button>
+                            <button id="ovl-restart" class="hidden">Restart</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Mobile controls live BELOW the canvas -->
+            <div class="touch-ctrls">
+                <button id="t-left" aria-label="Move Left">◀</button>
+                <button id="t-fire" aria-label="Fire">●</button>
+                <button id="t-right" aria-label="Move Right">▶</button>
+            </div>
+
+            <footer class="tips">Pro tip: Clear waves fast to keep invaders slow.</footer>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
