@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Simulation: Global Outbreak</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: #050505;
+            color: #e0e0e0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Scanlines Effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0),
+                    rgba(255, 255, 255, 0) 50%,
+                    rgba(0, 0, 0, 0.1) 50%,
+                    rgba(0, 0, 0, 0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Custom Scrollbar for Upgrade Panel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #dc2626;
+            border-radius: 4px;
+        }
+
+        .region-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+            text-shadow: 0 0 2px black;
+            transition: color 0.3s;
+        }
+
+        .dna-bubble {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, #fbbf24 30%, #b45309 90%);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px #fbbf24;
+            animation: pulse 1.5s infinite;
+            z-index: 20;
+            transform: translate(-50%, -50%);
+        }
+
+        .cure-bubble {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, #3b82f6 30%, #1e40af 90%);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px #3b82f6;
+            animation: pulse 1.5s infinite;
+            z-index: 20;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+        }
+
+        .pop-text {
+            position: absolute;
+            color: #fbbf24;
+            font-weight: bold;
+            font-size: 1.2rem;
+            animation: floatUp 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .tab-btn.active {
+            background-color: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+
+        /* Modal Styles */
+        .modal-bg {
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+        }
+
+        /* News Ticker Animation Control */
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .ticker-content {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 15s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(-100%, 0);
+            }
+        }
+    </style>
+</head>
+
+<body class="h-screen w-screen flex flex-col relative">
+
+    <div class="scanlines"></div>
+
+    <!-- START SCREEN -->
+    <div id="startScreen" class="absolute inset-0 z-50 flex items-center justify-center bg-black">
+        <div
+            class="max-w-md w-full p-8 border border-red-900 bg-gray-900 rounded-lg shadow-[0_0_20px_rgba(220,38,38,0.5)] text-center">
+            <h1 class="text-4xl font-bold text-red-600 mb-2">BIO-SIMULATOR</h1>
+            <p class="text-gray-400 mb-6 text-sm">Engineer the ultimate pathogen. Infect everyone.</p>
+
+            <input type="text" id="virusNameInput" placeholder="Name your pathogen..." maxlength="15"
+                class="w-full bg-black border border-gray-700 p-3 text-center text-white mb-6 focus:outline-none focus:border-red-600 uppercase tracking-wider">
+
+            <button onclick="Game.init()"
+                class="w-full bg-red-800 hover:bg-red-700 text-white font-bold py-3 px-4 rounded transition border border-red-600 hover:shadow-[0_0_15px_red]">
+                INITIATE SEQUENCE
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div id="endScreen" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/90">
+        <div class="max-w-md w-full p-8 border border-gray-700 bg-gray-900 rounded-lg text-center">
+            <h1 id="endTitle" class="text-4xl font-bold mb-4">GAME OVER</h1>
+            <p id="endMessage" class="text-gray-300 mb-6">Simulation results...</p>
+            <button onclick="location.reload()"
+                class="bg-white text-black font-bold py-2 px-6 rounded hover:bg-gray-200">
+                RESTART
+            </button>
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <header class="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 z-10 shadow-lg">
+        <div class="flex items-center space-x-4 w-1/3">
+            <div class="text-red-600 font-bold text-xl tracking-widest" id="virusNameDisplay">VIRUS</div>
+        </div>
+
+        <div class="flex flex-col items-center w-1/3">
+            <div class="text-xs text-gray-500 mb-1">WORLD DATE</div>
+            <div id="dateDisplay" class="text-lg font-bold">Jan 1, 2024</div>
+        </div>
+
+        <div class="flex items-center justify-end space-x-6 w-1/3">
+            <div class="text-center">
+                <div class="text-xs text-blue-400">CURE</div>
+                <div class="w-24 h-3 bg-gray-800 rounded-full mt-1 border border-gray-700 overflow-hidden relative">
+                    <div id="cureBar" class="h-full bg-blue-600 w-0 transition-all duration-500"></div>
+                </div>
+                <div id="curePercent" class="text-xs text-right text-blue-300 mt-1">0%</div>
+            </div>
+            <div class="text-center">
+                <div class="text-xs text-yellow-500">DNA</div>
+                <div id="dnaDisplay" class="text-2xl font-bold text-yellow-400">0</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN GAME AREA -->
+    <main class="flex-1 relative bg-[#0a0a0a] overflow-hidden" id="gameContainer">
+        <!-- Stats Overlay -->
+        <div
+            class="absolute top-4 left-4 z-10 bg-black/80 border border-gray-800 p-3 rounded text-sm space-y-2 w-48 pointer-events-none">
+            <div class="flex justify-between">
+                <span class="text-gray-400">Healthy</span>
+                <span id="healthyCount" class="text-gray-200">7.8B</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-red-400">Infected</span>
+                <span id="infectedCount" class="text-red-500 font-bold">0</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Dead</span>
+                <span id="deadCount" class="text-gray-400">0</span>
+            </div>
+        </div>
+
+        <!-- Canvas Map -->
+        <canvas id="worldMap" class="absolute top-0 left-0 w-full h-full cursor-crosshair"></canvas>
+
+        <!-- Region Tooltip -->
+        <div id="regionTooltip"
+            class="hidden absolute pointer-events-none bg-black/90 border border-white/20 p-2 rounded text-xs z-40 w-40">
+            <div id="tooltipName" class="font-bold text-white mb-1 border-b border-gray-700 pb-1">Region</div>
+            <div class="flex justify-between text-gray-400"><span>Inf:</span> <span id="tooltipInf"
+                    class="text-red-400">0</span></div>
+            <div class="flex justify-between text-gray-400"><span>Dead:</span> <span id="tooltipDead"
+                    class="text-gray-500">0</span></div>
+            <div class="flex justify-between text-gray-400"><span>Status:</span> <span id="tooltipStatus">Healthy</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- NEWS TICKER -->
+    <div class="h-8 bg-black border-t border-red-900/50 flex items-center overflow-hidden z-10 relative">
+        <div class="bg-red-900 px-3 h-full flex items-center text-xs font-bold text-white z-20 shrink-0">NEWS</div>
+        <div class="ticker-wrap w-full relative">
+            <div id="newsTicker" class="ticker-content text-sm text-gray-300 pt-1">
+                Waiting for Patient Zero...
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTROLS FOOTER -->
+    <footer class="h-16 bg-gray-900 border-t border-gray-800 flex items-center justify-between px-6 z-10">
+        <div class="flex space-x-2">
+            <button onclick="Game.setSpeed(0)" class="p-2 rounded hover:bg-gray-800 text-gray-400 w-10 text-center"><i
+                    class="fas fa-pause"></i></button>
+            <button onclick="Game.setSpeed(1)"
+                class="p-2 rounded hover:bg-gray-800 text-white w-10 text-center bg-gray-800"><i
+                    class="fas fa-play"></i></button>
+            <button onclick="Game.setSpeed(3)" class="p-2 rounded hover:bg-gray-800 text-gray-400 w-10 text-center"><i
+                    class="fas fa-forward"></i></button>
+        </div>
+
+        <button onclick="Game.toggleDiseaseMenu()"
+            class="flex items-center space-x-2 bg-gradient-to-r from-red-900 to-red-700 hover:from-red-800 hover:to-red-600 px-6 py-2 rounded-full border border-red-500 shadow-[0_0_10px_rgba(220,38,38,0.4)] transition-all transform hover:scale-105">
+            <i class="fas fa-dna text-white"></i>
+            <span class="font-bold text-white">EVOLVE</span>
+        </button>
+    </footer>
+
+    <!-- UPGRADE MODAL -->
+    <div id="diseaseMenu" class="hidden absolute inset-0 z-40 modal-bg flex items-center justify-center p-4">
+        <div
+            class="bg-gray-900 w-full max-w-4xl h-[80vh] rounded-xl border border-gray-700 shadow-2xl flex flex-col overflow-hidden">
+            <!-- Header -->
+            <div class="flex justify-between items-center p-4 border-b border-gray-700 bg-gray-950">
+                <h2 class="text-2xl font-bold text-white"><i class="fas fa-dna text-red-600 mr-2"></i>Evolution</h2>
+                <div class="flex items-center space-x-4">
+                    <span class="text-yellow-400 font-bold"><span id="menuDnaPoints">0</span> DNA</span>
+                    <button onclick="Game.toggleDiseaseMenu()" class="text-gray-400 hover:text-white"><i
+                            class="fas fa-times text-xl"></i></button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-700">
+                <button onclick="Game.switchTab('transmission')"
+                    class="tab-btn active flex-1 py-3 font-bold text-sm uppercase tracking-wider border-b-2 border-transparent hover:bg-gray-800 transition">Transmission</button>
+                <button onclick="Game.switchTab('symptoms')"
+                    class="tab-btn flex-1 py-3 font-bold text-sm uppercase tracking-wider border-b-2 border-transparent hover:bg-gray-800 transition">Symptoms</button>
+                <button onclick="Game.switchTab('abilities')"
+                    class="tab-btn flex-1 py-3 font-bold text-sm uppercase tracking-wider border-b-2 border-transparent hover:bg-gray-800 transition">Abilities</button>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 overflow-y-auto p-6 bg-gray-900/50 relative">
+                <div id="tab-transmission" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div id="tab-symptoms" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div id="tab-abilities" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- Description Panel (Bottom of Modal) -->
+            <div class="p-4 bg-gray-950 border-t border-gray-700 h-24">
+                <p id="upgradeDescription" class="text-sm text-gray-400">Hover over an evolution trait to see details.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME CONFIG & DATA ---
+
+        const COLORS = {
+            water: '#050505',
+            landHealthy: '#2f4f4f',
+            landInfected: '#8b0000',
+            landDead: '#111111',
+            text: '#ffffff',
+            line: '#333333'
+        };
+
+        // Enhanced Polygon Shapes
+        const REGIONS = [
+            {
+                id: 'na',
+                name: 'North America',
+                x: 0.15, y: 0.25,
+                pop: 580000000, wealth: 1.2, climate: 'temperate', connections: ['sa', 'eu', 'as'],
+                // Includes Alaska, Canada, US, Mexico, Greenland
+                shape: [
+                    [0.05, 0.1], [0.15, 0.05], [0.25, 0.02], [0.35, 0.05], [0.32, 0.35], // Greenland/Canada top
+                    [0.25, 0.45], [0.18, 0.55], // Florida/Mexico
+                    [0.10, 0.45], [0.05, 0.35], [0.02, 0.15] // West Coast
+                ]
+            },
+            {
+                id: 'sa',
+                name: 'South America',
+                x: 0.25, y: 0.65,
+                pop: 430000000, wealth: 0.8, climate: 'humid', connections: ['na', 'af'],
+                shape: [
+                    [0.18, 0.55], [0.30, 0.58], [0.35, 0.70], // Brazil curve
+                    [0.28, 0.92], [0.22, 0.85], [0.18, 0.65] // Chile/Argentina coast
+                ]
+            },
+            {
+                id: 'eu',
+                name: 'Europe',
+                x: 0.48, y: 0.2,
+                pop: 740000000, wealth: 1.1, climate: 'cold', connections: ['na', 'af', 'as'],
+                shape: [
+                    [0.40, 0.15], [0.50, 0.08], [0.58, 0.10], // Scandinavia
+                    [0.55, 0.28], [0.48, 0.32], [0.42, 0.30], // Mediterranean
+                    [0.38, 0.22] // UK/France
+                ]
+            },
+            {
+                id: 'af',
+                name: 'Africa',
+                x: 0.50, y: 0.55,
+                pop: 1300000000, wealth: 0.5, climate: 'hot', connections: ['sa', 'eu', 'as'],
+                shape: [
+                    [0.42, 0.35], [0.55, 0.35], [0.62, 0.50], // Horn of Africa
+                    [0.55, 0.85], [0.48, 0.80], [0.38, 0.55] // West Coast
+                ]
+            },
+            {
+                id: 'as',
+                name: 'Asia',
+                x: 0.70, y: 0.3,
+                pop: 4600000000, wealth: 0.9, climate: 'various', connections: ['eu', 'af', 'oc', 'na'],
+                shape: [
+                    [0.58, 0.10], [0.85, 0.08], [0.95, 0.15], // Russia
+                    [0.90, 0.45], [0.75, 0.55], [0.65, 0.45], // SE Asia / India
+                    [0.60, 0.30] // Middle East
+                ]
+            },
+            {
+                id: 'oc',
+                name: 'Oceania',
+                x: 0.85, y: 0.75,
+                pop: 42000000, wealth: 1.0, climate: 'hot', connections: ['as'],
+                shape: [
+                    [0.78, 0.65], [0.92, 0.65], // Northern Aus
+                    [0.95, 0.85], [0.85, 0.90], [0.75, 0.80] // Southern Aus
+                ]
+            }
+        ];
+
+        const UPGRADES = {
+            transmission: [
+                { id: 'air1', name: 'Air I', cost: 9, desc: 'Pathogen becomes airborne on dust particles. Increases spread in Arid climates.', infectivity: 4, lethality: 0 },
+                { id: 'water1', name: 'Water I', cost: 10, desc: 'Pathogen can survive in water supplies. Increases spread in Humid climates.', infectivity: 4, lethality: 0 },
+                { id: 'livestock', name: 'Livestock', cost: 7, desc: 'Susceptible to livestock infection. Increases mutation chance.', infectivity: 3, lethality: 0 },
+                { id: 'rodent', name: 'Rodent', cost: 12, desc: 'Fleas on rodents carry the disease. High urban spread.', infectivity: 5, lethality: 0 },
+                { id: 'bird', name: 'Bird', cost: 14, desc: 'Birds carry the pathogen across borders.', infectivity: 6, lethality: 0 },
+                { id: 'insect', name: 'Insect', cost: 15, desc: 'Mosquitoes act as vectors. Huge bonus in Hot climates.', infectivity: 5, lethality: 0 },
+                { id: 'blood', name: 'Blood', cost: 12, desc: 'Direct fluid contact transmission. Harder to cure.', infectivity: 2, lethality: 1 },
+                { id: 'air2', name: 'Air II', cost: 25, req: 'air1', desc: 'Can travel through air filters. Massive infectivity boost.', infectivity: 8, lethality: 0 },
+                { id: 'water2', name: 'Water II', cost: 25, req: 'water1', desc: 'Survives chemical treatment. Ships become highly infectious.', infectivity: 8, lethality: 0 },
+                { id: 'aerosol', name: 'Extreme Bio-Aerosol', cost: 40, req: 'air2', desc: 'Passes through protective gear. Maximum spread.', infectivity: 15, lethality: 0 }
+            ],
+            symptoms: [
+                { id: 'cough', name: 'Coughing', cost: 4, desc: 'Increases infectivity slightly.', infectivity: 2, lethality: 0, severity: 1 },
+                { id: 'rash', name: 'Rash', cost: 5, desc: 'Skin blisters increase infectivity.', infectivity: 2, lethality: 0, severity: 1 },
+                { id: 'insomnia', name: 'Insomnia', cost: 6, desc: 'Hosts become irritable and less productive.', infectivity: 0, lethality: 0, severity: 2 },
+                { id: 'sneeze', name: 'Sneezing', cost: 8, req: 'cough', desc: 'Fluids projected over distance.', infectivity: 5, lethality: 0, severity: 2 },
+                { id: 'paranoia', name: 'Paranoia', cost: 12, req: 'insomnia', desc: 'Hosts distrust doctors. Slows cure slightly.', infectivity: 1, lethality: 1, severity: 4 },
+                { id: 'fever', name: 'Fever', cost: 13, desc: 'Increases body temperature. Fatal to weak hosts.', infectivity: 2, lethality: 3, severity: 5 },
+                { id: 'seizures', name: 'Seizures', cost: 18, req: 'paranoia', desc: 'Random blackouts decrease host function.', infectivity: 0, lethality: 5, severity: 8 },
+                { id: 'necrosis', name: 'Necrosis', cost: 22, req: 'rash', desc: 'Infected tissue dies. Highly visual.', infectivity: 3, lethality: 10, severity: 15 },
+                { id: 'dysentery', name: 'Dysentery', cost: 25, req: 'fever', desc: 'Digestive breakdown. Rapid dehydration.', infectivity: 4, lethality: 15, severity: 18 },
+                { id: 'hemorrhage', name: 'Internal Hemorrhaging', cost: 35, req: 'necrosis', desc: 'Massive internal bleeding.', infectivity: 2, lethality: 30, severity: 25 },
+                { id: 'tof', name: 'Total Organ Failure', cost: 50, req: 'hemorrhage', desc: 'Catastrophic cell death. Extremely lethal.', infectivity: 0, lethality: 55, severity: 45 }
+            ],
+            abilities: [
+                { id: 'cold1', name: 'Cold Resistance I', cost: 8, desc: 'Virus withstands freezing temperatures.', resilience: 'cold' },
+                { id: 'heat1', name: 'Heat Resistance I', cost: 8, desc: 'Virus withstands extreme heat.', resilience: 'heat' },
+                { id: 'drug1', name: 'Drug Resistance I', cost: 14, desc: 'Pathogen becomes resistant to common antibiotics.', resilience: 'drug' },
+                { id: 'cold2', name: 'Cold Resistance II', cost: 20, req: 'cold1', desc: 'Virus thrives in arctic conditions.', resilience: 'cold' },
+                { id: 'heat2', name: 'Heat Resistance II', cost: 20, req: 'heat1', desc: 'Virus thrives in desert conditions.', resilience: 'heat' },
+                { id: 'drug2', name: 'Drug Resistance II', cost: 28, req: 'drug1', desc: 'Resistant to advanced antivirals.', resilience: 'drug' },
+                { id: 'shuffle', name: 'Genetic Re-Shuffle', cost: 35, desc: 'Mutates DNA structure. Reduces Cure progress.', resilience: 'cureDecrease' },
+                { id: 'harden', name: 'Genetic Hardening', cost: 40, desc: 'Slows down cure research significantly.', resilience: 'cure' }
+            ]
+        };
+
+        // --- GAME ENGINE ---
+
+        class PandemicGame {
+            constructor() {
+                this.canvas = document.getElementById('worldMap');
+                this.ctx = this.canvas.getContext('2d');
+
+                this.state = {
+                    virusName: 'PAX-12',
+                    started: false,
+                    paused: false,
+                    speed: 1, // 0=pause, 1=normal, 3=fast
+                    day: 0,
+                    dna: 0,
+                    cureProgress: 0,
+                    totalPop: 0,
+                    globalStats: { healthy: 0, infected: 0, dead: 0 },
+                    statsHistory: [],
+                    hasStartedInfection: false
+                };
+
+                this.newsQueue = [];
+                this.milestones = {
+                    hundred: false,
+                    thousand: false,
+                    million: false,
+                    billion: false,
+                    firstDeath: false,
+                    halfDead: false
+                };
+
+                this.world = [];
+                this.upgrades = new Set();
+                this.events = [];
+                this.vehicles = []; // Planes/Ships
+
+                this.modifiers = {
+                    infectivity: 2, // Base
+                    lethality: 0,
+                    severity: 0,
+                    cureResist: 1
+                };
+
+                this.initRegions();
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+
+                // Interaction
+                this.canvas.addEventListener('click', (e) => this.handleMapClick(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+
+                // Loops
+                requestAnimationFrame((t) => this.gameLoop(t));
+                setInterval(() => this.simulationTick(), 200);
+                setInterval(() => this.processNews(), 4000); // Check for new headline every 4s
+            }
+
+            init() {
+                const nameInput = document.getElementById('virusNameInput').value;
+                if (nameInput.trim()) this.state.virusName = nameInput.trim();
+
+                document.getElementById('virusNameDisplay').textContent = this.state.virusName;
+                document.getElementById('startScreen').classList.add('hidden');
+
+                this.queueNews(`New pathogen '${this.state.virusName}' detected.`);
+                this.queueNews(`Select a region to begin infection.`);
+
+                this.state.started = true;
+                this.updateUI();
+            }
+
+            initRegions() {
+                let totalPop = 0;
+                this.world = REGIONS.map(r => {
+                    totalPop += r.pop;
+                    return {
+                        ...r,
+                        healthy: r.pop,
+                        infected: 0,
+                        dead: 0,
+                        status: 'healthy',
+                        cureContribution: 0
+                    };
+                });
+                this.state.totalPop = totalPop;
+                this.state.globalStats.healthy = totalPop;
+            }
+
+            resizeCanvas() {
+                this.canvas.width = this.canvas.parentElement.offsetWidth;
+                this.canvas.height = this.canvas.parentElement.offsetHeight;
+            }
+
+            // --- SIMULATION LOGIC ---
+
+            simulationTick() {
+                if (!this.state.started || this.state.paused) return;
+
+                const iterations = this.state.speed === 3 ? 3 : (this.state.speed === 0 ? 0 : 1);
+
+                for (let i = 0; i < iterations; i++) {
+                    this.state.day++;
+                    this.simulateSpread();
+                    this.simulateCure();
+                    this.spawnBubbles();
+                    this.updateVehicles();
+                    this.checkMilestones();
+
+                    // Update date every tick (daily)
+                    this.updateDate();
+                }
+
+                this.checkEndConditions();
+                this.updateUI();
+            }
+
+            simulateSpread() {
+                let globalInf = 0;
+                let globalDead = 0;
+
+                this.world.forEach(region => {
+                    if (region.infected > 0) {
+                        // Spread Formula
+                        let spreadChance = (this.modifiers.infectivity * 0.00005) * (region.healthy / region.pop);
+
+                        // Climate Modifiers
+                        if (this.upgrades.has('air1') && region.climate === 'temperate') spreadChance *= 1.2;
+                        if (this.upgrades.has('insect') && region.climate === 'hot') spreadChance *= 1.5;
+                        if (this.upgrades.has('cold1') && region.climate === 'cold') spreadChance *= 1.2;
+                        if (this.upgrades.has('cold2') && region.climate === 'cold') spreadChance *= 1.5;
+
+                        let newInfections = Math.ceil(region.infected * spreadChance) + 10;
+
+                        // Cap at healthy
+                        if (newInfections > region.healthy) newInfections = region.healthy;
+
+                        // Death Formula
+                        let deathChance = (this.modifiers.lethality * 0.0001);
+                        let newDeaths = Math.floor(region.infected * deathChance);
+                        if (newDeaths > region.infected) newDeaths = region.infected;
+
+                        // Apply
+                        region.healthy -= newInfections;
+                        region.infected += newInfections;
+
+                        region.infected -= newDeaths;
+                        region.dead += newDeaths;
+
+                        // Region Spread (Cross-border)
+                        if (region.infected > region.pop * 0.05) {
+                            if (Math.random() < 0.02) {
+                                const targetId = region.connections[Math.floor(Math.random() * region.connections.length)];
+                                this.launchVehicle(region.id, targetId);
+                            }
+                        }
+                    }
+                    globalInf += region.infected;
+                    globalDead += region.dead;
+                });
+
+                this.state.globalStats.infected = globalInf;
+                this.state.globalStats.dead = globalDead;
+                this.state.globalStats.healthy = this.state.totalPop - globalInf - globalDead;
+            }
+
+            simulateCure() {
+                if (this.state.globalStats.infected > 1000 || this.modifiers.severity > 5) {
+                    let researchSpeed = (this.modifiers.severity * 0.0005) + (this.state.globalStats.dead * 0.00000001);
+
+                    // Wealthy nations contribute more
+                    const wealthyAlive = this.world.reduce((acc, r) => acc + (r.healthy > 0 ? r.wealth : 0), 0);
+                    researchSpeed *= (wealthyAlive / 5);
+
+                    if (this.upgrades.has('harden')) researchSpeed *= 0.5;
+                    if (this.upgrades.has('paranoia')) researchSpeed *= 0.9;
+
+                    this.state.cureProgress += researchSpeed;
+                    if (this.state.cureProgress >= 100) this.state.cureProgress = 100;
+                }
+            }
+
+            spawnBubbles() {
+                // Random DNA bubbles
+                if (Math.random() < 0.01) {
+                    const r = this.world[Math.floor(Math.random() * this.world.length)];
+                    this.createBubble(r.x, r.y, 'dna');
+                }
+                // Cure bubbles
+                if (this.state.cureProgress > 10 && Math.random() < 0.005) {
+                    const r = this.world[Math.floor(Math.random() * this.world.length)];
+                    this.createBubble(r.x, r.y, 'cure');
+                }
+            }
+
+            launchVehicle(fromId, toId) {
+                const from = this.world.find(r => r.id === fromId);
+                const to = this.world.find(r => r.id === toId);
+
+                if (to.infected >= to.pop) return;
+
+                this.vehicles.push({
+                    x: from.x, y: from.y,
+                    tx: to.x, ty: to.y,
+                    progress: 0,
+                    speed: 0.02,
+                    targetRegion: to
+                });
+            }
+
+            updateVehicles() {
+                for (let i = this.vehicles.length - 1; i >= 0; i--) {
+                    let v = this.vehicles[i];
+                    v.progress += v.speed;
+                    if (v.progress >= 1) {
+                        if (v.targetRegion.infected === 0 && v.targetRegion.healthy > 0) {
+                            v.targetRegion.infected = 1;
+                            v.targetRegion.healthy--;
+                            this.queueNews(`${this.state.virusName} has spread to ${v.targetRegion.name}!`);
+                        }
+                        this.vehicles.splice(i, 1);
+                    }
+                }
+            }
+
+            updateDate() {
+                const date = new Date(2024, 0, 1);
+                date.setDate(date.getDate() + this.state.day);
+                document.getElementById('dateDisplay').textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            }
+
+            checkMilestones() {
+                const inf = this.state.globalStats.infected;
+                const dead = this.state.globalStats.dead;
+
+                if (!this.milestones.hundred && inf > 100) { this.milestones.hundred = true; this.queueNews(`${this.state.virusName} is spreading...`); }
+                if (!this.milestones.thousand && inf > 1000) { this.milestones.thousand = true; this.queueNews(`Thousand infected. Doctors are concerned.`); }
+                if (!this.milestones.million && inf > 1000000) { this.milestones.million = true; this.queueNews(`1 Million infected. Global Alert.`); }
+                if (!this.milestones.firstDeath && dead > 0) { this.milestones.firstDeath = true; this.queueNews(`First death confirmed. Panic rises.`); }
+                if (!this.milestones.billion && inf > 1000000000) { this.milestones.billion = true; this.queueNews(`1 Billion infected. Society crumbles.`); }
+            }
+
+            checkEndConditions() {
+                if (this.state.globalStats.healthy <= 0 && this.state.globalStats.infected <= 0) {
+                    this.endGame(true, "Humanity Eradicated. Victory.");
+                } else if (this.state.cureProgress >= 100) {
+                    this.endGame(false, "Cure Deployed. The pathogen has been wiped out.");
+                } else if (this.state.hasStartedInfection && this.state.globalStats.infected === 0 && this.state.globalStats.healthy > 0) {
+                    this.endGame(false, "Pathogen died out. Humanity survives.");
+                }
+            }
+
+            endGame(win, msg) {
+                this.state.paused = true;
+                this.state.speed = 0;
+                document.getElementById('endScreen').classList.remove('hidden');
+                document.getElementById('endTitle').textContent = win ? "VICTORY" : "DEFEAT";
+                document.getElementById('endTitle').classList.add(win ? 'text-red-600' : 'text-blue-500');
+                document.getElementById('endMessage').textContent = msg;
+            }
+
+            // --- NEWS SYSTEM ---
+
+            queueNews(text) {
+                this.newsQueue.push(text);
+                // If this is the only item, display immediately? 
+                // We let the interval handle it to keep spacing consistent.
+                if (this.newsQueue.length === 1 && document.getElementById('newsTicker').innerText === "") {
+                    this.processNews();
+                }
+            }
+
+            processNews() {
+                if (this.newsQueue.length > 0) {
+                    const text = this.newsQueue.shift();
+                    const ticker = document.getElementById('newsTicker');
+
+                    // Reset Animation
+                    ticker.style.animation = 'none';
+                    ticker.offsetHeight; /* trigger reflow */
+                    ticker.style.animation = 'marquee 15s linear infinite';
+
+                    ticker.textContent = `${this.state.day > 0 ? 'Day ' + this.state.day + ': ' : ''} ${text}`;
+                }
+            }
+
+
+            // --- INTERACTION ---
+
+            getRegionPath(r) {
+                const path = new Path2D();
+                if (r.shape && r.shape.length > 0) {
+                    path.moveTo(r.shape[0][0] * this.canvas.width, r.shape[0][1] * this.canvas.height);
+                    for (let i = 1; i < r.shape.length; i++) {
+                        path.lineTo(r.shape[i][0] * this.canvas.width, r.shape[i][1] * this.canvas.height);
+                    }
+                    path.closePath();
+                }
+                return path;
+            }
+
+            handleMapClick(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                let clickedRegion = null;
+
+                for (let r of this.world) {
+                    const path = this.getRegionPath(r);
+                    if (this.ctx.isPointInPath(path, x, y)) {
+                        clickedRegion = r;
+                        break;
+                    }
+                }
+
+                if (clickedRegion) {
+                    if (this.state.globalStats.infected === 0) {
+                        this.state.hasStartedInfection = true;
+                        clickedRegion.infected = 1;
+                        clickedRegion.healthy--;
+                        this.queueNews(`Patient Zero detected in ${clickedRegion.name}`);
+                    }
+                }
+            }
+
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                let hoveredRegion = null;
+                for (let r of this.world) {
+                    const path = this.getRegionPath(r);
+                    if (this.ctx.isPointInPath(path, x, y)) {
+                        hoveredRegion = r;
+                        break;
+                    }
+                }
+
+                const tooltip = document.getElementById('regionTooltip');
+                if (hoveredRegion) {
+                    tooltip.classList.remove('hidden');
+                    tooltip.style.left = (e.clientX + 10) + 'px';
+                    tooltip.style.top = (e.clientY + 10) + 'px';
+                    document.getElementById('tooltipName').textContent = hoveredRegion.name;
+                    document.getElementById('tooltipInf').textContent = this.formatNumber(hoveredRegion.infected);
+                    document.getElementById('tooltipDead').textContent = this.formatNumber(hoveredRegion.dead);
+
+                    let status = "Healthy";
+                    if (hoveredRegion.dead > hoveredRegion.pop * 0.5) status = "Critical";
+                    else if (hoveredRegion.infected > 0) status = "Infected";
+                    document.getElementById('tooltipStatus').textContent = status;
+                } else {
+                    tooltip.classList.add('hidden');
+                }
+            }
+
+            createBubble(rx, ry, type) {
+                const bubble = document.createElement('div');
+                bubble.className = type === 'dna' ? 'dna-bubble' : 'cure-bubble';
+                // Convert relative pos to pixels
+                bubble.style.left = (rx * this.canvas.width) + 'px';
+                bubble.style.top = (ry * this.canvas.height) + 'px';
+
+                const offset = 20;
+                bubble.style.left = `calc(${bubble.style.left} + ${Math.random() * offset - offset / 2}px)`;
+                bubble.style.top = `calc(${bubble.style.top} + ${Math.random() * offset - offset / 2}px)`;
+
+                bubble.onclick = (e) => {
+                    e.stopPropagation();
+                    if (type === 'dna') {
+                        const points = Math.floor(Math.random() * 3) + 2; // slightly more DNA
+                        this.addDNA(points);
+                        this.showPopText(e.clientX, e.clientY, `+${points} DNA`);
+                    } else {
+                        this.state.cureProgress = Math.max(0, this.state.cureProgress - 3);
+                        this.showPopText(e.clientX, e.clientY, `Cure Slowed`);
+                    }
+                    bubble.remove();
+                };
+
+                setTimeout(() => { if (bubble.parentElement) bubble.remove(); }, 4000);
+                document.getElementById('gameContainer').appendChild(bubble);
+            }
+
+            showPopText(x, y, text) {
+                const el = document.createElement('div');
+                el.className = 'pop-text';
+                el.innerText = text;
+                el.style.left = x + 'px';
+                el.style.top = y + 'px';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 1000);
+            }
+
+            addDNA(amount) {
+                this.state.dna += amount;
+                this.updateUI();
+            }
+
+            setSpeed(val) {
+                this.state.speed = val;
+                this.state.paused = (val === 0);
+            }
+
+            // --- UI & RENDERING ---
+
+            toggleDiseaseMenu() {
+                const el = document.getElementById('diseaseMenu');
+                el.classList.toggle('hidden');
+                if (!el.classList.contains('hidden')) {
+                    this.renderUpgrades();
+                }
+            }
+
+            switchTab(tab) {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                event.target.classList.add('active');
+
+                ['transmission', 'symptoms', 'abilities'].forEach(t => {
+                    document.getElementById(`tab-${t}`).classList.add('hidden');
+                });
+                document.getElementById(`tab-${tab}`).classList.remove('hidden');
+                this.currentTab = tab;
+            }
+
+            renderUpgrades() {
+                this.switchTab(this.currentTab || 'transmission');
+
+                ['transmission', 'symptoms', 'abilities'].forEach(cat => {
+                    const container = document.getElementById(`tab-${cat}`);
+                    container.innerHTML = '';
+
+                    UPGRADES[cat].forEach(u => {
+                        const hasIt = this.upgrades.has(u.id);
+                        const canAfford = this.state.dna >= u.cost;
+                        const reqMet = !u.req || this.upgrades.has(u.req);
+
+                        const div = document.createElement('div');
+                        div.className = `p-4 border rounded relative transition cursor-pointer select-none 
+                            ${hasIt ? 'bg-red-900 border-red-500 text-white' :
+                                (reqMet ? (canAfford ? 'bg-gray-800 border-gray-600 hover:bg-gray-700 hover:border-white' : 'bg-gray-800 border-gray-700 opacity-70') : 'bg-black border-gray-800 opacity-50 cursor-not-allowed')}`;
+
+                        div.innerHTML = `
+                            <div class="font-bold text-sm">${u.name}</div>
+                            <div class="text-xs ${hasIt ? 'text-red-200' : 'text-yellow-500'} font-bold mt-1">${hasIt ? 'EVOLVED' : u.cost + ' DNA'}</div>
+                        `;
+
+                        div.onmouseenter = () => document.getElementById('upgradeDescription').textContent = u.desc;
+                        div.onclick = () => this.buyUpgrade(u);
+
+                        container.appendChild(div);
+                    });
+                });
+            }
+
+            buyUpgrade(u) {
+                if (this.upgrades.has(u.id)) return;
+                if (u.req && !this.upgrades.has(u.req)) return;
+                if (this.state.dna < u.cost) return;
+
+                this.state.dna -= u.cost;
+                this.upgrades.add(u.id);
+
+                // Apply effects
+                if (u.infectivity) this.modifiers.infectivity += u.infectivity;
+                if (u.lethality) this.modifiers.lethality += u.lethality;
+                if (u.severity) this.modifiers.severity += u.severity;
+                if (u.resilience === 'cureDecrease') this.state.cureProgress = Math.max(0, this.state.cureProgress - 10);
+
+                this.queueNews(`Evolved ${u.name}`);
+                this.updateUI();
+                this.renderUpgrades();
+            }
+
+            updateUI() {
+                document.getElementById('dnaDisplay').textContent = this.state.dna;
+                document.getElementById('healthyCount').textContent = this.formatNumber(this.state.globalStats.healthy);
+                document.getElementById('infectedCount').textContent = this.formatNumber(this.state.globalStats.infected);
+                document.getElementById('deadCount').textContent = this.formatNumber(this.state.globalStats.dead);
+
+                document.getElementById('cureBar').style.width = this.state.cureProgress + '%';
+                document.getElementById('curePercent').textContent = Math.floor(this.state.cureProgress) + '%';
+
+                document.getElementById('menuDnaPoints').textContent = this.state.dna;
+            }
+
+            formatNumber(num) {
+                if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
+                if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+                if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+                return num;
+            }
+
+            gameLoop() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw connections
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 1;
+                this.ctx.beginPath();
+                this.world.forEach(r => {
+                    const rX = r.x * this.canvas.width;
+                    const rY = r.y * this.canvas.height;
+                    r.connections.forEach(connId => {
+                        const target = this.world.find(t => t.id === connId);
+                        if (target) {
+                            this.ctx.moveTo(rX, rY);
+                            this.ctx.lineTo(target.x * this.canvas.width, target.y * this.canvas.height);
+                        }
+                    });
+                });
+                this.ctx.stroke();
+
+                // Draw Regions
+                this.world.forEach(r => {
+                    let fillStyle = COLORS.landHealthy;
+                    const infRatio = r.infected / r.pop;
+                    const deadRatio = r.dead / r.pop;
+
+                    if (deadRatio > 0.9) {
+                        fillStyle = '#111'; // Dead
+                    } else if (infRatio > 0) {
+                        // Blend Red based on infection
+                        const intensity = Math.min(255, Math.floor(infRatio * 255) + 50);
+                        fillStyle = `rgb(${intensity}, 0, 0)`;
+                    }
+
+                    const path = this.getRegionPath(r);
+                    this.ctx.fillStyle = fillStyle;
+                    this.ctx.fill(path);
+                    this.ctx.strokeStyle = '#555';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke(path);
+
+                    // Text (Name)
+                    const cx = r.x * this.canvas.width;
+                    const cy = r.y * this.canvas.height;
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    this.ctx.font = '10px monospace';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(r.name.toUpperCase(), cx, cy);
+                });
+
+                // Draw Vehicles
+                this.ctx.fillStyle = '#fff';
+                this.vehicles.forEach(v => {
+                    const curX = v.x + (v.tx - v.x) * v.progress;
+                    const curY = v.y + (v.ty - v.y) * v.progress;
+
+                    const screenX = curX * this.canvas.width;
+                    const screenY = curY * this.canvas.height;
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(screenX, screenY, 3, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(v.x * this.canvas.width, v.y * this.canvas.height);
+                    this.ctx.lineTo(screenX, screenY);
+                    this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    this.ctx.stroke();
+                });
+
+                requestAnimationFrame((t) => this.gameLoop(t));
+            }
+        }
+
+        // Start
+        const Game = new PandemicGame();
+
+    </script>
+</body>
+
+</html>
