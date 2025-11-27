@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Voxel Hopper</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #333;
+            font-family: 'Press Start 2P', cursive;
+            touch-action: none;
+            /* Prevent zoom/scroll on mobile */
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #score-display {
+            padding: 20px;
+            font-size: 24px;
+            color: white;
+            text-shadow: 2px 2px 0 #000;
+            text-align: left;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            display: none;
+            pointer-events: auto;
+            border: 4px solid white;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 30px;
+            margin: 0 0 20px 0;
+            color: #ffcc00;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            font-family: sans-serif;
+            /* Readable font for instructions */
+            font-weight: bold;
+        }
+
+        button {
+            background: #ffcc00;
+            border: none;
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            color: #333;
+            transition: transform 0.1s;
+            box-shadow: 4px 4px 0 #b38f00;
+        }
+
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #b38f00;
+        }
+
+        #mobile-controls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            #mobile-controls {
+                display: block;
+                color: rgba(255, 255, 255, 0.5);
+                font-family: sans-serif;
+                font-size: 12px;
+                text-shadow: 1px 1px 0 #000;
+            }
+        }
+    </style>
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+
+<body>
+
+    <div id="game-container"></div>
+
+    <div id="ui-layer">
+        <div id="score-display">0</div>
+        <div id="mobile-controls">Swipe to Hop</div>
+    </div>
+
+    <div id="game-over">
+        <h1>GAME OVER</h1>
+        <p id="final-score">Score: 0</p>
+        <button onclick="resetGame()">TRY AGAIN</button>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const CONFIG = {
+            laneWidth: 15, // How many tiles wide is the world
+            tileSize: 10,  // Size of one voxel tile
+            playerSpeed: 10,
+            zoom: 20,
+            colors: {
+                grass: 0x57A68B, // Colder green
+                road: 0x444444, // Darker gray
+                roadLine: 0xFFFFFF,
+                water: 0x3179A6, // Darker, colder blue
+                tree: 0x3A7F58, // Evergreen
+                trunk: 0x5D4037, // Darker wood
+                car: [0xE53935, 0xFB8C00, 0x1E88E5, 0xFFFFFF], // Added white, removed purple
+                log: 0x6D4C41, // Slightly different wood
+                player: 0x222222, // Penguin black
+                penguinBeak: 0xFFB300 // Penguin beak/feet orange
+            }
+        };
+
+        // --- GLOBALS ---
+        let scene, camera, renderer;
+        let player;
+        let lanes = [];
+        let currentLane = 0;
+        let currentColumn = Math.floor(CONFIG.laneWidth / 2);
+        let score = 0;
+        let isGameOver = false;
+        let isMoving = false;
+
+        // Animation globals
+        let physicsClock = new THREE.Clock();
+        let frameId;
+
+        // Map Generation State
+        let laneIndexCounter = 0; // Tracks the absolute Z index of generated lanes
+
+        // --- INITIALIZATION ---
+        function init() {
+            const container = document.getElementById('game-container');
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xB0E0E6); // Powder Blue (Wintry)
+            scene.fog = new THREE.Fog(0xB0E0E6, 100, 500);
+
+            // Camera (Orthographic for Isometric look)
+            const aspect = window.innerWidth / window.innerHeight;
+            const d = CONFIG.zoom * 2;
+            camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+            camera.position.set(100, 100, 100); // Isometric angle
+            camera.lookAt(0, 0, 0);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            dirLight.position.set(100, 200, 50);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.left = -100;
+            dirLight.shadow.camera.right = 100;
+            dirLight.shadow.camera.top = 100;
+            dirLight.shadow.camera.bottom = -100;
+            scene.add(dirLight);
+
+            // Inputs
+            // Make sure iframe is focused when clicked
+            window.addEventListener('click', () => window.focus());
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('resize', onWindowResize);
+
+            // Touch Inputs
+            let touchStartX = 0;
+            let touchStartY = 0;
+            document.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: false });
+
+            document.addEventListener('touchend', e => {
+                const touchEndX = e.changedTouches[0].screenX;
+                const touchEndY = e.changedTouches[0].screenY;
+                handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
+            }, { passive: false });
+
+            startGame();
+            animate();
+        }
+
+        function startGame() {
+            // Cleanup old scene
+            if (player) scene.remove(player.mesh);
+            lanes.forEach(lane => {
+                if (lane.mesh.parent) lane.mesh.parent.remove(lane.mesh);
+            });
+            lanes = [];
+
+            // Reset State
+            score = 0;
+            document.getElementById('score-display').innerText = score;
+            document.getElementById('game-over').style.display = 'none';
+            isGameOver = false;
+            laneIndexCounter = 0;
+            currentLane = 0;
+            currentColumn = Math.floor(CONFIG.laneWidth / 2);
+
+            // Initial Lanes
+            // Start with a safe buffer of grass
+            for (let i = 0; i < 10; i++) {
+                createLane('grass');
+            }
+            // Generate some initial mix
+            for (let i = 0; i < 15; i++) {
+                createLane();
+            }
+
+            // Create Player
+            player = new Player();
+            scene.add(player.mesh);
+
+            // Force Camera Reset
+            camera.position.set(100, 100, 100);
+            camera.lookAt(0, 0, 0);
+        }
+
+        // --- GENERATION LOGIC ---
+
+        function createLane(forceType) {
+            const index = laneIndexCounter++;
+            let type = forceType;
+
+            if (!type) {
+                const rand = Math.random();
+                if (rand < 0.4) type = 'grass';
+                else if (rand < 0.7) type = 'road';
+                else type = 'river';
+            }
+
+            const lane = new Lane(index, type);
+            lanes.push(lane);
+            scene.add(lane.mesh);
+
+            // Memory Management: Remove old lanes
+            if (lanes.length > 50) {
+                const oldLane = lanes.shift();
+                if (oldLane.mesh.parent) oldLane.mesh.parent.remove(oldLane.mesh);
+            }
+        }
+
+        // --- CLASSES ---
+
+        class Player {
+            constructor() {
+                this.mesh = new THREE.Group();
+
+                // Main Body (Black torso & head)
+                const bodyGeo = new THREE.BoxGeometry(6, 8, 6);
+                const bodyMat = new THREE.MeshLambertMaterial({ color: CONFIG.colors.player }); // Black
+                this.body = new THREE.Mesh(bodyGeo, bodyMat);
+                this.body.position.y = 6; // Centered vertically
+                this.body.castShadow = true;
+                this.mesh.add(this.body);
+
+                // Belly (White front)
+                const bellyGeo = new THREE.BoxGeometry(4, 5, 1);
+                const bellyMat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF }); // White
+                this.belly = new THREE.Mesh(bellyGeo, bellyMat);
+                this.belly.position.set(0, 5.5, 3.1); // In front of body
+                this.mesh.add(this.belly);
+
+                // Beak (Orange)
+                const beakGeo = new THREE.BoxGeometry(2, 1, 2);
+                const beakMat = new THREE.MeshLambertMaterial({ color: CONFIG.colors.penguinBeak }); // Orange
+                this.beak = new THREE.Mesh(beakGeo, beakMat);
+                this.beak.position.set(0, 8, 4); // Forward
+                this.mesh.add(this.beak);
+
+                // Eyes (White)
+                const eyeGeo = new THREE.BoxGeometry(1, 1, 1);
+                const eyeMat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF }); // White
+                this.eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+                this.eyeL.position.set(-1.5, 8.5, 3.1); // Left eye
+                this.mesh.add(this.eyeL);
+
+                this.eyeR = this.eyeL.clone();
+                this.eyeR.position.set(1.5, 8.5, 3.1); // Right eye
+                this.mesh.add(this.eyeR);
+
+                // Feet (Orange)
+                const footGeo = new THREE.BoxGeometry(2, 1, 3);
+                const footMat = new THREE.MeshLambertMaterial({ color: CONFIG.colors.penguinBeak }); // Orange
+                this.footL = new THREE.Mesh(footGeo, footMat);
+                this.footL.position.set(-2, 0.5, 1); // Left foot
+                this.mesh.add(this.footL);
+
+                this.footR = this.footL.clone();
+                this.footR.position.set(2, 0.5, 1); // Right foot
+                this.mesh.add(this.footR);
+
+                // Flipper Left (Black)
+                const flipperGeo = new THREE.BoxGeometry(1, 4, 3);
+                const flipperMat = new THREE.MeshLambertMaterial({ color: CONFIG.colors.player }); // Black
+                this.flipperL = new THREE.Mesh(flipperGeo, flipperMat);
+                this.flipperL.position.set(-3.5, 5, 0);
+                this.mesh.add(this.flipperL);
+
+                // Flipper Right (Black)
+                this.flipperR = this.flipperL.clone();
+                this.flipperR.position.set(3.5, 5, 0);
+                this.mesh.add(this.flipperR);
+
+                // State
+                this.mesh.position.set(0, 0, 0);
+                this.targetPosition = new THREE.Vector3(0, 0, 0);
+                this.isAnimating = false;
+
+                // Set initial position based on grid
+                const x = (currentColumn * CONFIG.tileSize) - (CONFIG.laneWidth * CONFIG.tileSize / 2) + (CONFIG.tileSize / 2);
+                const z = 0; // Start at 0
+                this.mesh.position.set(x, 0, z);
+                this.targetPosition.copy(this.mesh.position);
+            }
+
+            hop(xDir, zDir) {
+                if (this.isAnimating || isGameOver) return;
+
+                const nextCol = currentColumn + xDir;
+                const nextLn = currentLane + zDir;
+
+                // Boundary Checks
+                if (nextCol < 0 || nextCol >= CONFIG.laneWidth) return;
+
+                // Obstacle Collision Check (Trees)
+                const targetLaneObj = lanes.find(l => l.index === nextLn);
+
+                if (targetLaneObj && targetLaneObj.type === 'grass') {
+                    // Check if there is a tree at nextCol
+                    if (targetLaneObj.obstacles.has(nextCol)) {
+                        // Blocked by tree
+                        this.boing();
+                        return;
+                    }
+                }
+
+                // Apply Logic
+                currentColumn = nextCol;
+                currentLane = nextLn;
+
+                // Update Score if moved forward
+                if (zDir === 1) {
+                    const relativeScore = currentLane; // Score is absolute distance
+                    if (relativeScore > score) {
+                        score = relativeScore;
+                        document.getElementById('score-display').innerText = score;
+                        // Generate new lane
+                        createLane();
+                    }
+                }
+
+                // Calculate Physical Target
+                const x = (currentColumn * CONFIG.tileSize) - (CONFIG.laneWidth * CONFIG.tileSize / 2) + (CONFIG.tileSize / 2);
+                const z = currentLane * CONFIG.tileSize;
+
+                this.isAnimating = true;
+                this.animateMove(x, z);
+            }
+
+            animateMove(targetX, targetZ) {
+                const startX = this.mesh.position.x;
+                const startZ = this.mesh.position.z;
+                const startTime = performance.now();
+                const duration = 150; // ms
+
+                const animate = (time) => {
+                    const elapsed = time - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+
+                    // Linear movement
+                    this.mesh.position.x = startX + (targetX - startX) * progress;
+                    this.mesh.position.z = startZ + (targetZ - startZ) * progress;
+
+                    // Parabolic arc for hop (Y axis)
+                    this.mesh.position.y = (Math.sin(progress * Math.PI) * 5);
+
+                    // Rotate body slightly for effect
+                    this.body.rotation.x = Math.sin(progress * Math.PI) * 0.2;
+
+                    updateCamera();
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        this.mesh.position.x = targetX;
+                        this.mesh.position.z = targetZ;
+                        this.mesh.position.y = 0;
+                        this.isAnimating = false;
+                        this.body.rotation.x = 0;
+                    }
+                };
+                requestAnimationFrame(animate);
+            }
+
+            boing() {
+                // Animation when hitting a tree (squash)
+                if (this.isAnimating) return;
+                this.isAnimating = true;
+                const startTime = performance.now();
+                const duration = 100;
+
+                const animate = (time) => {
+                    const elapsed = time - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+
+                    // Squash Y, bulge X/Z
+                    const scale = 1 - Math.sin(progress * Math.PI) * 0.2;
+                    this.mesh.scale.set(1 / scale, scale, 1 / scale);
+
+                    if (progress < 1) requestAnimationFrame(animate);
+                    else {
+                        this.mesh.scale.set(1, 1, 1);
+                        this.isAnimating = false;
+                    }
+                };
+                requestAnimationFrame(animate);
+            }
+        }
+
+        class Lane {
+            constructor(index, type) {
+                this.index = index;
+                this.type = type; // 'grass', 'road', 'river'
+                this.mesh = new THREE.Group();
+                this.obstacles = new Set(); // Stores indices of columns with static obstacles
+                this.vehicles = []; // Dynamic objects
+
+                // Position Z
+                const zPos = index * CONFIG.tileSize;
+                this.mesh.position.z = zPos;
+
+                // --- Ground Mesh ---
+                const geo = new THREE.BoxGeometry(CONFIG.laneWidth * CONFIG.tileSize, CONFIG.tileSize, CONFIG.tileSize);
+                let col = CONFIG.colors.grass;
+                if (type === 'road') col = CONFIG.colors.road;
+                if (type === 'river') col = CONFIG.colors.water;
+
+                const mat = new THREE.MeshLambertMaterial({ color: col });
+                const ground = new THREE.Mesh(geo, mat);
+                ground.position.y = -CONFIG.tileSize / 2; // Surface at y=0
+                ground.receiveShadow = true;
+                this.mesh.add(ground);
+
+                // --- Details & Obstacles ---
+
+                if (type === 'grass') {
+                    // Spawn Trees Logic (Existing)
+                    for (let i = 0; i < CONFIG.laneWidth; i++) {
+                        let chance = 0.1;
+                        if (i < 2 || i > CONFIG.laneWidth - 3) chance = 0.5;
+                        if (index === 0 && i === Math.floor(CONFIG.laneWidth / 2)) chance = 0;
+
+                        if (Math.random() < chance) {
+                            this.createTree(i);
+                        }
+                    }
+                } else if (type === 'road') {
+                    // Car Logic
+                    this.speed = (Math.random() * 0.10) + 0.15;
+                    this.direction = Math.random() > 0.5 ? 1 : -1;
+
+                    // Cluster spawning logic variables
+                    this.vehicleInterval = Math.random() * 2000 + 2000;
+                    this.lastVehicleTime = 0;
+                    this.clusterRemaining = 0; // Number of cars left to spawn in current "convoy"
+                } else if (type === 'river') {
+                    ground.position.y = -CONFIG.tileSize / 2 - 2;
+                    this.speed = (Math.random() * 0.08) + 0.04;
+                    this.direction = Math.random() > 0.5 ? 1 : -1;
+                    this.vehicleInterval = Math.random() * 2000 + 1500;
+                    this.lastVehicleTime = 0;
+                }
+            }
+
+            createTree(colIndex) {
+                this.obstacles.add(colIndex);
+                const x = (colIndex * CONFIG.tileSize) - (CONFIG.laneWidth * CONFIG.tileSize / 2) + (CONFIG.tileSize / 2);
+
+                const group = new THREE.Group();
+                const trunkGeo = new THREE.BoxGeometry(4, 6, 4);
+                const trunkMat = new THREE.MeshLambertMaterial({ color: CONFIG.colors.trunk });
+                const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+                trunk.position.y = 3;
+                trunk.castShadow = true;
+                trunk.receiveShadow = true;
+                group.add(trunk);
+
+                // Leaves
+                const leavesGeo = new THREE.BoxGeometry(8, 9, 8);
+                const leavesMat = new THREE.MeshLambertMaterial({ color: CONFIG.colors.tree });
+                const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+                leaves.position.y = 9;
+                leaves.castShadow = true;
+                leaves.receiveShadow = true;
+                group.add(leaves);
+
+                // Snow Cap
+                const snowGeo = new THREE.BoxGeometry(8, 2, 8);
+                const snowMat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+                const snow = new THREE.Mesh(snowGeo, snowMat);
+                snow.position.y = 14.5; // Top of leaves (9 + 4.5) + half snow height (1) = 14.5
+                snow.receiveShadow = true;
+                snow.castShadow = true;
+                group.add(snow);
+
+                group.position.x = x;
+                this.mesh.add(group);
+            }
+
+            update(dt, time) {
+                if (this.type === 'grass') return;
+
+                // Move existing vehicles
+                for (let i = this.vehicles.length - 1; i >= 0; i--) {
+                    const v = this.vehicles[i];
+                    v.mesh.position.x += this.speed * this.direction * dt * 60;
+
+                    const bound = (CONFIG.laneWidth * CONFIG.tileSize / 2) + 20;
+                    if (v.mesh.position.x > bound || v.mesh.position.x < -bound) {
+                        this.mesh.remove(v.mesh);
+                        this.vehicles.splice(i, 1);
+                    }
+                }
+
+                // Spawn Logic
+                if (time - this.lastVehicleTime > this.vehicleInterval) {
+
+                    // GAP CHECK
+                    let isClear = true;
+                    if (this.vehicles.length > 0) {
+                        const lastV = this.vehicles[this.vehicles.length - 1];
+                        const startX = this.direction === 1 ? -(CONFIG.laneWidth * CONFIG.tileSize / 2) - 20 : (CONFIG.laneWidth * CONFIG.tileSize / 2) + 20;
+                        const dist = Math.abs(lastV.mesh.position.x - startX);
+                        if (dist < 40) isClear = false; // Minimum gap of 40 units
+                    }
+
+                    if (isClear) {
+                        this.spawnVehicle();
+                        this.lastVehicleTime = time;
+
+                        if (this.type === 'road') {
+                            // Cluster logic
+                            if (this.clusterRemaining > 0) {
+                                this.clusterRemaining--;
+                                this.vehicleInterval = 500 + Math.random() * 300;
+                            } else {
+                                if (Math.random() > 0.4) {
+                                    this.clusterRemaining = Math.floor(Math.random() * 3) + 1;
+                                }
+                                this.vehicleInterval = 2000 + Math.random() * 2000;
+                            }
+                        } else {
+                            this.vehicleInterval = Math.random() * 2000 + 1500;
+                        }
+                    }
+                }
+            }
+
+            spawnVehicle() {
+                const isCar = this.type === 'road';
+                const len = isCar ? (Math.random() > 0.8 ? 2 : 1) : (Math.random() * 2 + 2);
+                const width = isCar ? 12 : len * 8;
+                const xStart = this.direction === 1 ? -(CONFIG.laneWidth * CONFIG.tileSize / 2) - 20 : (CONFIG.laneWidth * CONFIG.tileSize / 2) + 20;
+
+                const meshGroup = new THREE.Group();
+
+                if (isCar) {
+                    const color = CONFIG.colors.car[Math.floor(Math.random() * CONFIG.colors.car.length)];
+                    const bodyGeo = new THREE.BoxGeometry(10, 8, 8);
+                    const bodyMat = new THREE.MeshLambertMaterial({ color: color });
+                    const body = new THREE.Mesh(bodyGeo, bodyMat);
+                    body.position.y = 4;
+                    body.castShadow = true;
+
+                    const wheelGeo = new THREE.BoxGeometry(2, 2, 2);
+                    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
+
+                    const w1 = new THREE.Mesh(wheelGeo, wheelMat); w1.position.set(-3, 1, 3);
+                    const w2 = new THREE.Mesh(wheelGeo, wheelMat); w2.position.set(3, 1, 3);
+                    const w3 = new THREE.Mesh(wheelGeo, wheelMat); w3.position.set(-3, 1, -3);
+                    const w4 = new THREE.Mesh(wheelGeo, wheelMat); w4.position.set(3, 1, -3);
+
+                    meshGroup.add(body);
+                    meshGroup.add(w1, w2, w3, w4);
+                } else {
+                    const logGeo = new THREE.BoxGeometry(width, 4, 8);
+                    const logMat = new THREE.MeshLambertMaterial({ color: CONFIG.colors.log });
+                    const log = new THREE.Mesh(logGeo, logMat);
+                    log.position.y = -1;
+                    meshGroup.add(log);
+                }
+
+                meshGroup.position.set(xStart, 0, 0);
+                this.mesh.add(meshGroup);
+
+                this.vehicles.push({ mesh: meshGroup, width: width, type: isCar ? 'car' : 'log' });
+            }
+        }
+
+        // --- GAME LOOP ---
+
+        function animate() {
+            frameId = requestAnimationFrame(animate);
+
+            if (isGameOver) return;
+
+            const dt = physicsClock.getDelta();
+            const time = performance.now();
+
+            lanes.forEach(lane => lane.update(dt, time));
+
+            checkCollisions();
+            renderer.render(scene, camera);
+        }
+
+        function checkCollisions() {
+            if (!player) return;
+
+            const playerBox = new THREE.Box3().setFromObject(player.body);
+            playerBox.expandByScalar(-1);
+
+            // 0. Check Bounds (Death Logic)
+            if (currentLane < 0) {
+                gameOver();
+                return;
+            }
+
+            const laneObj = lanes.find(l => l.index === currentLane);
+
+            // If fallen off the back of the world memory
+            if (!laneObj) {
+                // Animate falling? For now just death.
+                player.mesh.position.y -= 0.5;
+                if (player.mesh.position.y < -5) gameOver();
+                return;
+            }
+
+            // 1. Check Car Collisions
+            if (laneObj.type === 'road') {
+                for (let v of laneObj.vehicles) {
+                    const vBox = new THREE.Box3().setFromObject(v.mesh);
+                    if (playerBox.intersectsBox(vBox)) {
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+
+            // 2. Check River Logic
+            if (laneObj.type === 'river' && !player.isAnimating) {
+                let onLog = false;
+                let logSpeed = 0;
+
+                for (let v of laneObj.vehicles) {
+                    if (player.mesh.position.x > v.mesh.position.x - v.width / 2 &&
+                        player.mesh.position.x < v.mesh.position.x + v.width / 2) {
+                        onLog = true;
+                        logSpeed = laneObj.speed * laneObj.direction;
+                        break;
+                    }
+                }
+
+                if (!onLog) {
+                    player.mesh.position.y -= 0.5;
+                    if (player.mesh.position.y < -5) gameOver();
+                } else {
+                    player.mesh.position.x += logSpeed * 60 * physicsClock.getDelta();
+                    const exactCol = ((player.mesh.position.x - (CONFIG.tileSize / 2)) + (CONFIG.laneWidth * CONFIG.tileSize / 2)) / CONFIG.tileSize;
+                    currentColumn = Math.round(exactCol);
+                    if (currentColumn < 0 || currentColumn >= CONFIG.laneWidth) {
+                        gameOver();
+                    }
+                }
+            }
+        }
+
+        function updateCamera() {
+            const desiredX = player.mesh.position.x + 100;
+            const desiredZ = player.mesh.position.z + 100;
+
+            camera.position.x += (desiredX - camera.position.x) * 0.1;
+            camera.position.z += (desiredZ - camera.position.z) * 0.1;
+
+            camera.lookAt(camera.position.x - 100, 0, camera.position.z - 100);
+        }
+
+        // --- INPUT HANDLING ---
+
+        function handleKeyDown(event) {
+            if (isGameOver) return;
+
+            // Prevent default scrolling for game keys
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) {
+                event.preventDefault();
+            }
+
+            switch (event.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    player.hop(0, 1);
+                    player.mesh.rotation.y = 0;
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    player.hop(0, -1);
+                    player.mesh.rotation.y = Math.PI;
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    player.hop(-1, 0);
+                    // Updated rotation to face LEFT
+                    player.mesh.rotation.y = -Math.PI / 2;
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    player.hop(1, 0);
+                    // Updated rotation to face RIGHT
+                    player.mesh.rotation.y = Math.PI / 2;
+                    break;
+            }
+        }
+
+        function handleSwipe(sx, sy, ex, ey) {
+            const dx = ex - sx;
+            const dy = ey - sy;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Horizontal
+                if (Math.abs(dx) < 30) return;
+                if (dx > 0) { // Right
+                    player.hop(1, 0);
+                    player.mesh.rotation.y = Math.PI / 2;
+                } else { // Left
+                    player.hop(-1, 0);
+                    player.mesh.rotation.y = -Math.PI / 2;
+                }
+            } else {
+                // Vertical
+                if (Math.abs(dy) < 30) {
+                    player.hop(0, 1);
+                    player.mesh.rotation.y = 0;
+                    return;
+                }
+
+                if (dy > 0) { // Back
+                    player.hop(0, -1);
+                    player.mesh.rotation.y = Math.PI;
+                } else { // Forward
+                    player.hop(0, 1);
+                    player.mesh.rotation.y = 0;
+                }
+            }
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            document.getElementById('game-over').style.display = 'block';
+            document.getElementById('final-score').innerText = "Final Score: " + score;
+        }
+
+        window.resetGame = function () {
+            startGame();
+            animate();
+        };
+
+        function onWindowResize() {
+            const aspect = window.innerWidth / window.innerHeight;
+            const d = CONFIG.zoom * 2;
+            camera.left = -d * aspect;
+            camera.right = d * aspect;
+            camera.top = d;
+            camera.bottom = -d;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+
+    </script>
+</body>
+
+</html>
