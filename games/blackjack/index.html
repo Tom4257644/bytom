@@ -2,334 +2,538 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Blackjack</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack By Tom</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .card-wrapper {
-            perspective: 600px;
-            width: 32px;
-            height: 42px;
-            margin: 2px;
-        }
-
-        .card-flip {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.6s ease;
-        }
-
-        .card-flip.flipped {
-            transform: rotateY(180deg);
-        }
-
-        .card-front,
-        .card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            color: rgb(255, 8, 8);
-            ;
-            backface-visibility: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-            border: 1px solid black;
-            border-radius: 6px;
-            background-color: #f8f4e3;
-            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
-        }
-
-        .card-front {
-            background-color: #3f0404;
-            /* card back */
-        }
-
-        .card-back {
-            transform: rotateY(180deg);
-            color: rgb(165, 0, 0);
-        }
-
-
-        #totalMoney,
-        #totalBet {
-            text-align: center;
-        }
-
-        .space-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-
-        #buttonRow {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 14px;
-        }
-
-        .button-single,
-        .button-double {
-            background-color: #ffcf57;
-            border: none;
-            border-radius: 6px;
-            color: #333;
-            font-weight: bold;
-            font-size: 12px;
-            padding: 8px 14px;
-            text-align: center;
-            transition: background 0.3s ease;
-            cursor: pointer;
-        }
-
-        .button-single:hover,
-        .button-double:hover {
-            background-color: #ffd978;
-        }
-
-        .button-single {
-            width: 100%;
-        }
-
-        .button-double {
-            flex: 1;
-        }
-
-
-        #cancelBetButton.invisible {
-            visibility: hidden;
-        }
-
-
-        .cardStyle {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #f8f4e3;
-            border: 1px solid #000;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            width: 32px;
-            height: 42px;
-            text-align: center;
-            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
-            margin: 2px;
-            color: red;
-        }
-
-
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap');
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Custom Colors based on request */
+        .bg-felt-dark {
             background-color: #0b3d0b;
-            margin: 0;
-            padding: 10px;
-            color: white;
-            box-sizing: border-box;
         }
 
-        #divForBlackjackGame {
-            max-width: 100%;
+        .bg-felt-light {
             background-color: #134e13;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-            padding: 12px;
         }
 
-        h1 {
-            font-size: 20px;
-            text-align: center;
-            margin: 8px 0 16px 0;
-            color: #f2f2f2;
+        .text-gold {
+            color: #ffcf57;
         }
 
-        .row {
-            margin-bottom: 10px;
-        }
-
-        .cardsBackground {
-            background-color: #0c3a0c;
-            padding: 6px;
-            display: flex;
-            gap: 6px;
-            border-radius: 8px;
-            min-height: 40px;
-        }
-
-        .infoBox {
-            background-color: #1f5e1f;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-        }
-
-        .h2 {
-            margin: 0;
-            font-size: 13px;
-        }
-
-        #dealerResult,
-        #playerResult {
-            font-style: italic;
-            font-size: 11px;
-        }
-
-        .pageButtons {
+        .bg-gold {
             background-color: #ffcf57;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            color: #333;
-            font-weight: bold;
-            font-size: 12px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            text-align: center;
         }
 
-        .pageButtons:hover {
-            background-color: #ffd978;
+        .border-gold {
+            border-color: #ffcf57;
         }
 
-        #buttonRow {
-            margin-top: 14px;
-            display: flex;
-            justify-content: center;
-            gap: 8px;
+        .hover-bg-gold-dark:hover {
+            background-color: #e6bb4e;
         }
 
-        .betButton img {
-            height: 48px;
-            width: 48px;
-            cursor: pointer;
-            border-radius: 50%;
-            background-color: #1a601a;
-            padding: 4px;
-            box-sizing: border-box;
-            transition: transform 0.2s ease;
+        /* Card Patterns */
+        .card-back-pattern {
+            background-image: radial-gradient(#ffcf57 1px, transparent 1px);
+            background-size: 8px 8px;
         }
 
-        .betButton img:hover {
-            transform: scale(1.08);
+        /* Chip Styling */
+        .chip-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
         }
 
-        #totalMoney,
-        #totalBet {
-            background-color: #164116;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 12px;
+        .chip-inner-border {
+            border: 2px dashed #0b3d0b;
         }
 
-        #buttonsForBets {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
-            justify-content: center;
+        .felt-texture {
+            background-image: url('https://www.transparenttextures.com/patterns/black-felt.png');
+            opacity: 0.15;
         }
 
-        #cancelBetButton {
-            padding: 8px 14px;
-            margin-top: 6px;
-            display: inline-block;
-            width: 100%;
-            text-align: center;
+        /* Animations */
+        .slide-in {
+            animation: slideIn 0.3s ease-out forwards;
         }
 
-        .totalMoneyPadding {
-            padding: 4px 0;
-        }
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
 
-        #rowForDealerCards,
-        #rowForPlayerCards {
-            margin-top: 4px;
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
     </style>
 </head>
 
-<body>
-    <div class="background" id="divForBlackjackGame">
-        <div class="row" id="rowForGameHeader">
-            <h1>Blackjack by Tom</h1>
-        </div>
+<body class="bg-felt-dark text-white h-screen overflow-hidden flex items-center justify-center p-4">
 
-        <!-- Dealer Section -->
-        <div class="row" id="dealerRow">
-            <div class="infoBox" id="dealerInfo">
-                <div class="infoBox row space-between" id="dealerInfo">
-                    <span>Dealer's Cards</span>
-                    <span id="dealerTotalText">Total: 0</span>
+    <!-- Main Game Container -->
+    <div
+        class="w-full max-w-4xl h-full max-h-[90vh] bg-felt-light rounded-2xl shadow-2xl overflow-hidden border-4 border-felt-dark relative flex flex-col">
+
+        <!-- Texture Overlay -->
+        <div class="absolute inset-0 felt-texture pointer-events-none z-0"></div>
+
+        <!-- Header -->
+        <div class="bg-felt-dark p-3 flex justify-between items-center border-b border-gold/20 relative z-20 shrink-0">
+            <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                <span class="text-gold text-2xl">♠</span> Blackjack By Tom
+            </h1>
+            <div class="flex items-center gap-4">
+                <div class="text-xs sm:text-sm font-medium text-white/70">
+                    Balance: <span id="header-balance" class="text-gold font-mono text-lg">$1000</span>
                 </div>
-                <p id="dealerResult"></p>
             </div>
-            <div id="rowForDealerCards" class="cardsBackground row"></div>
         </div>
 
-        <!-- Player Section -->
-        <div class="row" id="playerRow">
-            <div class="infoBox" id="playerInfo">
-                <div class="infoBox row space-between" id="playerInfo">
-                    <span>Player's Cards</span>
-                    <span id="playerTotalText">Total: 0</span>
+        <!-- Game Area (Flexible Height) -->
+        <div class="relative z-10 flex-1 flex flex-col p-4 overflow-y-auto">
+
+            <!-- Dealer Section -->
+            <div class="flex-1 flex flex-col justify-center min-h-[140px] relative">
+                <div
+                    class="w-full bg-felt-dark rounded-md px-4 py-2 flex justify-between items-center shadow-md border border-white/5 mb-2 relative z-10">
+                    <span class="text-white/90 font-medium text-sm tracking-wide">Dealer's Cards</span>
+                    <span id="dealer-score" class="font-mono font-bold text-white">-</span>
                 </div>
-                <p id="playerResult"></p>
+                <!-- Added z-0 here to keep cards on a lower layer than the message -->
+                <div id="dealer-cards" class="flex items-center justify-center -space-x-12 h-32 sm:h-36 relative z-0">
+                    <!-- Cards injected here -->
+                    <div class="text-white/20 font-bold uppercase tracking-widest text-sm">Waiting for Deal</div>
+                </div>
             </div>
-            <div id="rowForPlayerCards" class="cardsBackground row"></div>
+
+            <!-- Message Area -->
+            <!-- Added relative and z-50 to ensure this floats ON TOP of cards -->
+            <div id="message-area" class="h-12 flex items-center justify-center my-2 relative z-50">
+                <!-- Messages injected here -->
+            </div>
+
+            <!-- Player Section -->
+            <div class="flex-1 flex flex-col justify-center min-h-[140px] relative">
+                <div
+                    class="w-full bg-felt-dark rounded-md px-4 py-2 flex justify-between items-center shadow-md border border-white/5 mb-2 relative z-10">
+                    <span class="text-white/90 font-medium text-sm tracking-wide">Player's Cards</span>
+                    <span id="player-score" class="font-mono font-bold text-white">-</span>
+                </div>
+                <div id="player-cards" class="flex items-center justify-center -space-x-12 h-32 sm:h-36 relative z-0">
+                    <!-- Cards injected here -->
+                    <div class="text-white/20 font-bold uppercase tracking-widest text-sm">Place Your Bets</div>
+                </div>
+            </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="row" id="buttonRow">
-            <span id="dealButton" class="pageButtons">Deal</span>
-            <!-- Add more like Hit/Stand here if needed -->
-        </div>
+        <!-- Footer / Controls -->
+        <div class="bg-felt-dark p-4 border-t border-gold/20 relative z-20 shrink-0">
 
-        <!-- Betting Interface -->
-        <div class="row" id="bettingButtons">
-            <div id="totalMoney" class="row">
-                <span class="totalMoneyPadding">Total Money: $1000</span>
+            <!-- Betting Controls -->
+            <div id="betting-controls" class="flex flex-col gap-3">
+                <div class="flex justify-between items-center px-2">
+                    <div class="flex flex-col">
+                        <span class="text-xs text-white/60 uppercase">Current Bet</span>
+                        <span id="current-bet-display" class="text-xl font-mono font-bold text-gold">$0</span>
+                    </div>
+                    <button id="btn-deal"
+                        class="bg-gold text-felt-dark px-12 py-3 rounded-md font-bold text-lg uppercase shadow-lg hover-bg-gold-dark transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                        Deal
+                    </button>
+                    <button id="btn-clear"
+                        class="text-red-400 text-xs font-bold uppercase tracking-wider hover:text-red-300 underline opacity-0 pointer-events-none transition-opacity">
+                        Clear
+                    </button>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button
+                        class="chip-btn group relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-transform active:scale-95"
+                        data-value="1">
+                        <div
+                            class="absolute inset-0 rounded-full chip-inner-border bg-felt-light shadow-lg group-hover:bg-[#1a5e1a]">
+                        </div>
+                        <span class="relative z-10 font-black text-white text-sm">1</span>
+                    </button>
+                    <button
+                        class="chip-btn group relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-transform active:scale-95"
+                        data-value="10">
+                        <div
+                            class="absolute inset-0 rounded-full chip-inner-border bg-felt-light shadow-lg group-hover:bg-[#1a5e1a]">
+                        </div>
+                        <span class="relative z-10 font-black text-white text-sm">10</span>
+                    </button>
+                    <button
+                        class="chip-btn group relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-transform active:scale-95"
+                        data-value="50">
+                        <div
+                            class="absolute inset-0 rounded-full chip-inner-border bg-felt-light shadow-lg group-hover:bg-[#1a5e1a]">
+                        </div>
+                        <span class="relative z-10 font-black text-white text-sm">50</span>
+                    </button>
+                    <button
+                        class="chip-btn group relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-transform active:scale-95"
+                        data-value="100">
+                        <div
+                            class="absolute inset-0 rounded-full chip-inner-border bg-felt-light shadow-lg group-hover:bg-[#1a5e1a]">
+                        </div>
+                        <span class="relative z-10 font-black text-white text-sm">100</span>
+                    </button>
+                </div>
             </div>
 
-            <div id="totalBet" class="row">Total Bet: 0
+            <!-- Playing Controls -->
+            <div id="playing-controls" class="hidden flex gap-4 justify-center">
+                <button id="btn-hit"
+                    class="flex-1 max-w-xs bg-felt-light border-2 border-gold/30 text-white py-3 rounded-md font-bold text-lg uppercase shadow-lg hover:bg-[#1a5e1a] transition-transform active:scale-95">
+                    Hit
+                </button>
+                <button id="btn-stand"
+                    class="flex-1 max-w-xs bg-red-700 text-white py-3 rounded-md font-bold text-lg uppercase shadow-lg hover:bg-red-600 transition-transform active:scale-95">
+                    Stand
+                </button>
             </div>
 
-            <div id="buttonsForBets" class="row">
-                <span id="betButton1" class="betButton"><img src="assets/a1.png" /></span>
-                <span id="betButton10" class="betButton"><img src="assets/a10.png" /></span>
-                <span id="betButton50" class="betButton"><img src="assets/a50.png" /></span>
-                <span id="betButton100" class="betButton"><img src="assets/a100.png" /></span>
-                <span id="cancelBetButton" class="pageButtons invisible">Cancel Bet</span>
+            <!-- Game Over Controls -->
+            <div id="game-over-controls" class="hidden flex justify-center">
+                <button id="btn-new-game"
+                    class="w-full max-w-md bg-gold text-felt-dark py-3 rounded-md font-bold text-lg uppercase shadow-lg hover-bg-gold-dark transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i> New Game
+                </button>
             </div>
+
         </div>
     </div>
 
-    <div id="donationMessage"
-        style="text-align: center; margin-top: 12px; font-size: 12px; color: #ccc; display: none;">
-        <strong>Try my new games!</strong>
-        <br>
-        <a href="https://chromewebstore.google.com/detail/poker-by-tom/akikcgicmmcccghcmfchijfbfjgkbidn?hl=en&authuser=0"
-            target="_blank" style="color: #ffc107; text-decoration: none; display: block; margin-top: 6px;">
-            Poker by Tom
-        </a>
-        <a href="https://chromewebstore.google.com/detail/roulette-by-tom/dpgmgodmhgnfkfljkngjhapmecpbhicb?hl=en&authuser=0"
-            target="_blank" style="color: #ffc107; text-decoration: none; display: block; margin-top: 6px;">
-            Roulette by Tom
-        </a>
-    </div>
+    <script>
+        // --- Constants ---
+        const SUITS = ['♠', '♥', '♦', '♣'];
+        const VALUES = [
+            { label: 'A', value: 11 }, { label: '2', value: 2 }, { label: '3', value: 3 },
+            { label: '4', value: 4 }, { label: '5', value: 5 }, { label: '6', value: 6 },
+            { label: '7', value: 7 }, { label: '8', value: 8 }, { label: '9', value: 9 },
+            { label: '10', value: 10 }, { label: 'J', value: 10 }, { label: 'Q', value: 10 },
+            { label: 'K', value: 10 }
+        ];
 
+        // --- State ---
+        let state = {
+            deck: [],
+            playerHand: [],
+            dealerHand: [],
+            gameState: 'betting', // betting, playing, dealerTurn, gameOver
+            balance: 1000,
+            betAmount: 0,
+            currentBet: 0,
+            message: ''
+        };
 
+        // --- Logic ---
+        function createDeck() {
+            const deck = [];
+            for (let suit of SUITS) {
+                for (let val of VALUES) {
+                    deck.push({ ...val, suit });
+                }
+            }
+            return shuffle(deck);
+        }
 
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
 
-    <script src="script.js"></script>
+        function calculateScore(hand) {
+            let score = 0;
+            let aces = 0;
+            for (let card of hand) {
+                score += card.value;
+                if (card.label === 'A') aces++;
+            }
+            while (score > 21 && aces > 0) {
+                score -= 10;
+                aces--;
+            }
+            return score;
+        }
+
+        // --- DOM Elements ---
+        const els = {
+            headerBalance: document.getElementById('header-balance'),
+            dealerScore: document.getElementById('dealer-score'),
+            dealerCards: document.getElementById('dealer-cards'),
+            playerScore: document.getElementById('player-score'),
+            playerCards: document.getElementById('player-cards'),
+            messageArea: document.getElementById('message-area'),
+            bettingControls: document.getElementById('betting-controls'),
+            playingControls: document.getElementById('playing-controls'),
+            gameOverControls: document.getElementById('game-over-controls'),
+            currentBetDisplay: document.getElementById('current-bet-display'),
+            btnDeal: document.getElementById('btn-deal'),
+            btnClear: document.getElementById('btn-clear'),
+            btnHit: document.getElementById('btn-hit'),
+            btnStand: document.getElementById('btn-stand'),
+            btnNewGame: document.getElementById('btn-new-game'),
+            chipBtns: document.querySelectorAll('.chip-btn')
+        };
+
+        // --- Rendering ---
+        function renderCard(card, hidden = false, index) {
+            if (hidden) {
+                return `
+                    <div class="w-20 h-28 sm:w-24 sm:h-36 bg-felt-dark rounded-lg border-2 border-gold shadow-xl flex items-center justify-center relative overflow-hidden slide-in" style="z-index: ${index};">
+                        <div class="absolute inset-0 card-back-pattern opacity-20"></div>
+                        <div class="w-12 h-12 rounded-full border-4 border-gold/40 flex items-center justify-center">
+                            <span class="text-gold font-bold text-xl">?</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const isRed = card.suit === '♥' || card.suit === '♦';
+            const colorClass = isRed ? 'text-red-600' : 'text-slate-900';
+
+            return `
+                <div class="w-20 h-28 sm:w-24 sm:h-36 bg-[#fdfbf7] rounded-lg shadow-xl border border-gray-200 flex flex-col justify-between p-2 transform transition-all hover:-translate-y-2 select-none ${colorClass} slide-in" style="z-index: ${index};">
+                    <div class="text-lg font-bold leading-none text-left">${card.label}<br/>${card.suit}</div>
+                    <div class="text-4xl sm:text-5xl self-center">${card.suit}</div>
+                    <div class="text-lg font-bold leading-none text-right transform rotate-180">${card.label}<br/>${card.suit}</div>
+                </div>
+            `;
+        }
+
+        function updateUI() {
+            // Header
+            els.headerBalance.textContent = `$${state.balance}`;
+
+            // Dealer Area
+            if (state.gameState === 'betting') {
+                els.dealerCards.innerHTML = '<div class="text-white/20 font-bold uppercase tracking-widest text-sm">Waiting for Deal</div>';
+                els.dealerScore.textContent = '-';
+            } else {
+                els.dealerCards.innerHTML = state.dealerHand.map((c, i) =>
+                    renderCard(c, state.gameState === 'playing' && i === 0, i)
+                ).join('');
+                els.dealerScore.textContent = state.gameState === 'playing' ? '?' : calculateScore(state.dealerHand);
+            }
+
+            // Player Area
+            if (state.gameState === 'betting') {
+                els.playerCards.innerHTML = '<div class="text-white/20 font-bold uppercase tracking-widest text-sm">Place Your Bets</div>';
+                els.playerScore.textContent = '-';
+            } else {
+                els.playerCards.innerHTML = state.playerHand.map((c, i) => renderCard(c, false, i)).join('');
+                els.playerScore.textContent = calculateScore(state.playerHand);
+            }
+
+            // Message
+            if (state.message) {
+                els.messageArea.innerHTML = `
+                    <div class="bg-felt-dark/90 backdrop-blur px-6 py-2 rounded-full border border-gold animate-bounce shadow-lg relative z-[60]">
+                        <span class="text-gold font-bold text-lg">${state.message}</span>
+                    </div>
+                `;
+            } else {
+                els.messageArea.innerHTML = '';
+            }
+
+            // Controls
+            els.bettingControls.classList.add('hidden');
+            els.playingControls.classList.add('hidden');
+            els.gameOverControls.classList.add('hidden');
+
+            if (state.gameState === 'betting') {
+                els.bettingControls.classList.remove('hidden');
+                els.currentBetDisplay.textContent = `$${state.betAmount}`;
+                els.btnDeal.disabled = state.betAmount === 0;
+
+                // Toggle Clear Button opacity
+                if (state.betAmount > 0) {
+                    els.btnClear.classList.remove('opacity-0', 'pointer-events-none');
+                } else {
+                    els.btnClear.classList.add('opacity-0', 'pointer-events-none');
+                }
+
+                // Chip states
+                els.chipBtns.forEach(btn => {
+                    const val = parseInt(btn.dataset.value);
+                    if (state.balance < val) {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-50', 'grayscale', 'cursor-not-allowed');
+                    } else {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-50', 'grayscale', 'cursor-not-allowed');
+                    }
+                });
+
+            } else if (state.gameState === 'playing') {
+                els.playingControls.classList.remove('hidden');
+            } else if (state.gameState === 'gameOver') {
+                els.gameOverControls.classList.remove('hidden');
+            }
+
+            // Re-initialize icons if added dynamically (though lucide.createIcons() runs on load usually)
+            lucide.createIcons();
+        }
+
+        // --- Actions ---
+
+        function addToBet(amount) {
+            if (state.balance >= amount) {
+                state.balance -= amount;
+                state.betAmount += amount;
+                updateUI();
+            }
+        }
+
+        function clearBet() {
+            state.balance += state.betAmount;
+            state.betAmount = 0;
+            updateUI();
+        }
+
+        function dealGame() {
+            if (state.betAmount === 0) return;
+
+            state.currentBet = state.betAmount;
+
+            if (state.deck.length < 15) state.deck = createDeck();
+
+            state.playerHand = [state.deck.pop(), state.deck.pop()];
+            state.dealerHand = [state.deck.pop(), state.deck.pop()];
+            state.gameState = 'playing';
+            state.message = '';
+
+            if (calculateScore(state.playerHand) === 21) {
+                handleGameOver('blackjack');
+            }
+
+            updateUI();
+        }
+
+        function hit() {
+            const card = state.deck.pop();
+            state.playerHand.push(card);
+
+            if (calculateScore(state.playerHand) > 21) {
+                handleGameOver('bust');
+            }
+            updateUI();
+        }
+
+        function stand() {
+            state.gameState = 'dealerTurn';
+            updateUI(); // Show hidden card immediately
+
+            // Small delay before dealer starts drawing
+            setTimeout(() => {
+                dealerPlay();
+            }, 500);
+        }
+
+        function dealerPlay() {
+            let dealerScore = calculateScore(state.dealerHand);
+
+            if (dealerScore < 17) {
+                const card = state.deck.pop();
+                state.dealerHand.push(card);
+                updateUI();
+                setTimeout(dealerPlay, 800);
+            } else {
+                handleGameOver('compare');
+            }
+        }
+
+        function handleGameOver(reason) {
+            state.gameState = 'gameOver';
+            const pScore = calculateScore(state.playerHand);
+            const dScore = calculateScore(state.dealerHand);
+            let winAmount = 0;
+
+            if (reason === 'bust') {
+                state.message = "Bust! Dealer Wins";
+            } else if (reason === 'blackjack') {
+                if (dScore === 21) {
+                    state.message = "Push - Both Blackjack";
+                    winAmount = state.currentBet;
+                } else {
+                    state.message = "Blackjack! You Win";
+                    winAmount = state.currentBet * 2.5;
+                }
+            } else {
+                if (dScore > 21) {
+                    state.message = "Dealer Busts! You Win";
+                    winAmount = state.currentBet * 2;
+                } else if (pScore > dScore) {
+                    state.message = "You Win!";
+                    winAmount = state.currentBet * 2;
+                } else if (dScore > pScore) {
+                    state.message = "Dealer Wins";
+                } else {
+                    state.message = "Push - Tie Game";
+                    winAmount = state.currentBet;
+                }
+            }
+
+            state.balance += winAmount;
+            updateUI();
+        }
+
+        function resetGame() {
+            state.playerHand = [];
+            state.dealerHand = [];
+            state.gameState = 'betting';
+            state.message = '';
+            state.currentBet = 0;
+            state.betAmount = 0;
+            updateUI();
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            state.deck = createDeck();
+            lucide.createIcons();
+
+            // Event Listeners
+            els.btnDeal.addEventListener('click', dealGame);
+            els.btnClear.addEventListener('click', clearBet);
+            els.btnHit.addEventListener('click', hit);
+            els.btnStand.addEventListener('click', stand);
+            els.btnNewGame.addEventListener('click', resetGame);
+
+            els.chipBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Handle clicking the button or the inner elements
+                    const val = parseInt(e.currentTarget.dataset.value);
+                    addToBet(val);
+                });
+            });
+
+            updateUI();
+        });
+
+    </script>
 </body>
 
 </html>
