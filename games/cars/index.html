@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js Arcade Speedometer</title>
+    <title>Three.js Arcade Speedometer - 20 Car Grid</title>
     <style>
         body {
             margin: 0;
@@ -45,6 +45,17 @@
             width: fit-content;
         }
 
+        #coords {
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            color: #ffff00;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            width: fit-content;
+        }
+
         #fade-overlay {
             position: absolute;
             top: 0;
@@ -68,6 +79,24 @@
             z-index: 100;
             width: 80%;
             max-width: 600px;
+            max-height: 80vh;
+            /* Added max-height for scrolling */
+            overflow-y: auto;
+            /* Allow scrolling for long leaderboard */
+        }
+
+        /* Scrollbar styling for results */
+        #results-screen::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #results-screen::-webkit-scrollbar-track {
+            background: #222;
+        }
+
+        #results-screen::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
         }
 
         #placing-text {
@@ -111,10 +140,12 @@
 
         #leaderboard th,
         #leaderboard td {
-            padding: 15px;
+            padding: 10px;
+            /* Reduced padding for longer list */
             text-align: left;
             border-bottom: 1px solid #333;
-            font-size: 20px;
+            font-size: 16px;
+            /* Reduced font size */
         }
 
         #leaderboard th {
@@ -261,6 +292,7 @@
     <div id="ui-container">
         <div id="laps" class="hud-panel">LAP <span id="lap-counter">1</span> / 2</div>
         <div id="timer" class="hud-panel">00:00.00</div>
+        <div id="coords" class="hud-panel">X: 0 Y: 0 Z: 0</div>
     </div>
 
     <div id="grass-warning">OFF TRACK!</div>
@@ -298,7 +330,7 @@
         </div>
 
         <div id="speed-container">
-            <span id="speed-value">0</span> <span id="speed-unit">KM/H</span>
+            <span id="speed-value">0</span> <span id="speed-unit">MPH</span>
             <div id="rpm-bar-bg">
                 <div id="rpm-bar-fill"></div>
             </div>
@@ -319,30 +351,33 @@
         import * as THREE from 'three';
 
         // --- CONSTANTS ---
-        const KMH_FACTOR = 80;
+        const KMH_FACTOR = 200;
 
-        const CAR_ACCEL = 0.25;
-        const CAR_MAX_SPEED = 6.0;
-        const CAR_TURN_SPEED = 0.055;
+        const CAR_ACCEL = 0.1;
+        const CAR_MAX_SPEED = 1;
+        const CAR_TURN_SPEED = 0.085;
 
         const CAR_FRICTION_ROAD = 0.99;
-        const CAR_FRICTION_GRASS = 0.92;
+        const CAR_FRICTION_GRASS = 0.75;
 
         const TRACK_RADIUS = 14;
+        const PIT_LANE_RADIUS = 10;
+
         const CAMERA_HEIGHT = 7;
-        const CAMERA_DISTANCE = 14;
+        const CAMERA_DISTANCE = 10;
         const TOTAL_LAPS = 2;
 
         // --- Globals ---
         let scene, camera, renderer;
         let car, aiCars = [];
-        let trackCurve;
+        let trackCurve, pitLaneCurve;
         let keys = { w: false, a: false, s: false, d: false };
 
         let speed = 0;
         let angle = Math.PI;
         let velocity = new THREE.Vector3();
         let onGrass = false;
+        let inPitLane = false;
 
         let playerDamage = 0;
         let playerTireWear = 0;
@@ -365,6 +400,7 @@
         const grassWarningEl = document.getElementById('grass-warning');
         const timerEl = document.getElementById('timer');
         const lapEl = document.getElementById('lap-counter');
+        const coordsEl = document.getElementById('coords');
         const fadeOverlay = document.getElementById('fade-overlay');
         const resultsScreen = document.getElementById('results-screen');
         const placingText = document.getElementById('placing-text');
@@ -373,6 +409,7 @@
         const wearBarEl = document.getElementById('wear-bar');
 
         let trackPoints2D = [];
+        let pitLanePointsCollision = [];
 
         init();
         animate();
@@ -410,27 +447,59 @@
 
             createGround();
             createTrack();
-            createKerbs(); // Added Kerbs function call
+            createPitLane();
             createStartLine();
 
-            const startPoint = trackCurve.getPointAt(0);
-            const startTangent = trackCurve.getTangentAt(0).normalize();
+            // --- SPAWNING LOGIC ---
+            const startPoint = trackCurve.getPointAt(0); // Start Line Center
+            const startTangent = trackCurve.getTangentAt(0).normalize(); // Direction of track
+            // Vector pointing to the right of the track
             const rightVector = new THREE.Vector3().crossVectors(startTangent, new THREE.Vector3(0, 1, 0)).normalize();
 
+            // 1. Create Player (Front Row, Offset Left)
             const p1Pos = startPoint.clone().add(rightVector.clone().multiplyScalar(-5));
             createCar(p1Pos);
 
-            const aiBaseAccel = CAR_ACCEL * 0.98;
-            const aiMaxSpeed = CAR_MAX_SPEED * 0.99;
+            // 2. Create 19 AI Cars (Grid Start)
+            // Palette for the new cars
+            const aiColors = [
+                0xffeb3b, 0x0000ff, 0xffffff, 0xff00ff, 0x00ffff, 0xffaa00,
+                0x8800ff, 0x00ff88, 0x88ff00, 0xaa00aa, 0x00aaaa, 0xaaaaaa,
+                0x4444ff, 0xff4444, 0x44ff44, 0x884400, 0x333333, 0xeebb99, 0x990000
+            ];
 
-            const ai1Pos = startPoint.clone().add(rightVector.clone().multiplyScalar(5));
-            createAICar("AI Yellow", ai1Pos, 0xffeb3b, aiMaxSpeed, aiBaseAccel);
+            const totalAICars = 19;
+            const rowSpacing = 12; // Distance between rows
+            const sideSpacing = 5; // Distance from center
 
-            const ai2Pos = startPoint.clone().add(rightVector.clone().multiplyScalar(-5)).add(startTangent.clone().multiplyScalar(-15));
-            createAICar("AI Blue", ai2Pos, 0x0000ff, aiMaxSpeed * 0.98, aiBaseAccel * 0.98);
+            for (let i = 0; i < totalAICars; i++) {
+                // Calculate Grid Position
+                // i=0 is front row right (next to player)
+                // i=1 is second row left
+                // i=2 is second row right
 
-            const ai3Pos = startPoint.clone().add(rightVector.clone().multiplyScalar(5)).add(startTangent.clone().multiplyScalar(-15));
-            createAICar("AI White", ai3Pos, 0xffffff, aiMaxSpeed * 0.99, aiBaseAccel * 0.99);
+                const row = Math.floor((i + 1) / 2); // Row index (0 is player row, but player takes left slot)
+                const isRightSide = (i % 2 === 0);   // Toggle sides
+
+                // Calculate position: Start Point - (Tangent * RowDist) + (RightVector * SideDist)
+                // Note: Track goes forward, so we subtract tangent to go backwards for the grid
+                const backwardDist = row * rowSpacing;
+                const sideDist = isRightSide ? sideSpacing : -sideSpacing;
+
+                const spawnPos = startPoint.clone()
+                    .add(startTangent.clone().multiplyScalar(-backwardDist))
+                    .add(rightVector.clone().multiplyScalar(sideDist));
+
+                // Randomize Performance slightly
+                const skillFactor = 0.94 + (Math.random() * 0.08); // Speed between 94% and 102%
+                const aiMaxSpeed = CAR_MAX_SPEED * skillFactor;
+                const aiBaseAccel = CAR_ACCEL * skillFactor;
+
+                // Pick color
+                const color = aiColors[i % aiColors.length];
+
+                createAICar(`AI ${i + 1}`, spawnPos, color, aiMaxSpeed, aiBaseAccel);
+            }
 
             startTime = Date.now();
 
@@ -469,8 +538,6 @@
                 new THREE.Vector3(1200, 0, -600),
                 new THREE.Vector3(800, 0, -800),
                 new THREE.Vector3(400, 0, -400),
-                new THREE.Vector3(100, 0, -100),
-                new THREE.Vector3(20, 0, 20),
             ], true);
             totalTrackLength = trackCurve.getLength();
 
@@ -503,36 +570,42 @@
             scene.add(mesh);
         }
 
-        // NEW: Creates the red and white curbs
-        function createKerbs() {
+        function createPitLane() {
+            const pitLaneCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(400, 0, -400),
+                new THREE.Vector3(200, 0, -300),
+                new THREE.Vector3(0, 0, -400),
+            ], false);
+
             const canvas = document.createElement('canvas');
-            canvas.width = 128; canvas.height = 0;
+            canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
-            // Create stripes: White background, Red block on the right
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, 64, 64);
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(64, 0, 64, 64);
+            ctx.fillStyle = '#555555'; ctx.fillRect(0, 0, 64, 64);
+            ctx.fillStyle = 'white'; ctx.fillRect(0, 0, 2, 64); ctx.fillRect(62, 0, 2, 64);
+            const pitTexture = new THREE.CanvasTexture(canvas);
+            pitTexture.wrapS = THREE.RepeatWrapping; pitTexture.wrapT = THREE.RepeatWrapping;
+            pitTexture.repeat.set(50, 1);
 
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            // Repeat heavily along track length to create stripes
-            texture.repeat.set(1200, 1);
-
-            // Create a track that is slightly wider (Radius + 1.2)
-            const geometry = new THREE.TubeGeometry(trackCurve, 3000, TRACK_RADIUS + 1.2, 8, true);
-            const material = new THREE.MeshStandardMaterial({
-                map: texture,
-                roughness: 0.6
-            });
-
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.scale.y = 0.05;
-            // Position it slightly below the asphalt (0.1) so only the edges stick out
-            mesh.position.y = 0.08;
+            const tubeGeo = new THREE.TubeGeometry(pitLaneCurve, 200, PIT_LANE_RADIUS, 8, false);
+            const mesh = new THREE.Mesh(tubeGeo, new THREE.MeshStandardMaterial({ map: pitTexture, side: THREE.DoubleSide, roughness: 0.9 }));
+            mesh.scale.y = 0.05; mesh.position.y = 0.11;
             mesh.receiveShadow = true;
             scene.add(mesh);
+
+            pitLanePointsCollision = pitLaneCurve.getSpacedPoints(200);
+
+            const fontCanvas = document.createElement('canvas');
+            fontCanvas.width = 128; fontCanvas.height = 64;
+            const fCtx = fontCanvas.getContext('2d');
+            fCtx.fillStyle = 'black'; fCtx.fillRect(0, 0, 128, 64);
+            fCtx.fillStyle = 'yellow'; fCtx.font = 'bold 40px Arial'; fCtx.fillText("PIT", 30, 45);
+            const signTex = new THREE.CanvasTexture(fontCanvas);
+            const signGeo = new THREE.PlaneGeometry(10, 5);
+            const signMat = new THREE.MeshBasicMaterial({ map: signTex });
+            const sign = new THREE.Mesh(signGeo, signMat);
+            sign.position.set(413, 10, -433);
+            sign.lookAt(513, 10, -423);
+            scene.add(sign);
         }
 
         function createStartLine() {
@@ -628,7 +701,7 @@
             setTimeout(() => {
                 resultsScreen.style.display = 'block';
                 placingText.innerText = "DNF";
-                placingText.className = "dnf"; // RED
+                placingText.className = "dnf";
             }, 1000);
         }
 
@@ -669,7 +742,7 @@
                 let targetSpeed = ai.maxSpeed;
 
                 if (dot < 0.98) {
-                    targetSpeed = ai.maxSpeed * Math.max(0.4, dot * 0.5);
+                    targetSpeed = ai.maxSpeed * Math.max(0.95, dot * 0.5);
                 }
 
                 if (ai.speed > targetSpeed) {
@@ -736,8 +809,15 @@
             }
 
             speed *= (onGrass ? CAR_FRICTION_GRASS : CAR_FRICTION_ROAD);
-            if (speed > CAR_MAX_SPEED) speed = CAR_MAX_SPEED;
-            if (speed < -CAR_MAX_SPEED / 2) speed = -CAR_MAX_SPEED / 2;
+
+            // DYNAMIC MAX SPEED (Pit Lane Limiter)
+            let currentMaxSpeed = CAR_MAX_SPEED;
+            if (inPitLane) {
+                currentMaxSpeed = 80 / KMH_FACTOR;
+            }
+
+            if (speed > currentMaxSpeed) speed = currentMaxSpeed;
+            if (speed < -currentMaxSpeed / 2) speed = -currentMaxSpeed / 2;
 
             if (Math.abs(speed) > 0.01) {
                 const speedRatio = Math.abs(speed) / CAR_MAX_SPEED;
@@ -764,7 +844,7 @@
             car.position.z += velocity.z;
             car.rotation.y = angle;
 
-            // Collisions
+            // Collisions with AI
             const carRadius = 2.0;
             aiCars.forEach(ai => {
                 const hit = resolveCollision(car.position, carRadius, ai.mesh.position, carRadius, false, null);
@@ -774,9 +854,9 @@
                     ai.collisionPush.x += dx * 0.1; ai.collisionPush.z += dz * 0.1;
                     speed *= 0.98;
 
-                    // --- DAMAGE LOGIC ---
+                    // Damage Logic
                     if (playerDamage < 100 && !isDNF && !playerFinished) {
-                        playerDamage += 0.4; // Reduced from 2.0
+                        playerDamage += 0.4;
                         if (playerDamage >= 100) {
                             triggerDNF();
                         }
@@ -795,31 +875,62 @@
                 }
             }
 
-            // Track Logic
+            // --- TRACK & PIT LANE DETECTION LOGIC ---
+
+            // 1. Check Main Track
             const points = trackCurve.getSpacedPoints(totalCheckpoints);
-            let closestDist = Infinity;
+            let closestDistMain = Infinity;
             let closestIndex = -1;
             for (let i = 0; i < points.length; i++) {
                 const d = car.position.distanceTo(points[i]);
-                if (d < closestDist) { closestDist = d; closestIndex = i; }
+                if (d < closestDistMain) { closestDistMain = d; closestIndex = i; }
             }
-            if (closestDist > TRACK_RADIUS + 1.5) onGrass = true; else onGrass = false;
+
+            // 2. Check Pit Lane
+            let closestDistPit = Infinity;
+            for (let i = 0; i < pitLanePointsCollision.length; i++) {
+                const d = car.position.distanceTo(pitLanePointsCollision[i]);
+                if (d < closestDistPit) closestDistPit = d;
+            }
+
+            // 3. Determine if "Off Track"
+            const onMainTrack = closestDistMain <= TRACK_RADIUS + 1.5;
+            const onPitLane = closestDistPit <= PIT_LANE_RADIUS + 1.0;
+
+            if (onMainTrack || onPitLane) {
+                onGrass = false;
+            } else {
+                onGrass = true;
+            }
+
+            // 4. Pit Stop Logic
+            inPitLane = onPitLane && !onMainTrack;
+            if (inPitLane && Math.abs(speed) < 2.0 && !playerFinished && !isDNF) {
+                // Repair if moving slowly in pit
+                if (playerDamage > 0) playerDamage -= 0.2;
+                if (playerDamage < 0) playerDamage = 0;
+
+                if (playerTireWear > 0) playerTireWear -= 0.2;
+                if (playerTireWear < 0) playerTireWear = 0;
+            }
 
             // Laps & Finish
             const buffer = 100;
-            if (lastCheckpoint > totalCheckpoints - buffer && closestIndex < buffer) {
-                currentLap++;
-                lastCheckpoint = closestIndex;
-                if (!playerFinished && !isDNF) lapEl.innerText = currentLap;
+            if (onMainTrack) {
+                if (lastCheckpoint > totalCheckpoints - buffer && closestIndex < buffer) {
+                    currentLap++;
+                    lastCheckpoint = closestIndex;
+                    if (!playerFinished && !isDNF) lapEl.innerText = currentLap;
 
-                if (currentLap > TOTAL_LAPS && !playerFinished && !isDNF) {
-                    lapEl.innerText = "FINISH";
-                    registerFinish("YOU", Date.now() - startTime, true);
+                    if (currentLap > TOTAL_LAPS && !playerFinished && !isDNF) {
+                        lapEl.innerText = "FINISH";
+                        registerFinish("YOU", Date.now() - startTime, true);
+                    }
+                } else if (closestIndex > lastCheckpoint && closestIndex < lastCheckpoint + buffer) {
+                    lastCheckpoint = closestIndex;
                 }
-            } else if (closestIndex > lastCheckpoint && closestIndex < lastCheckpoint + buffer) {
-                lastCheckpoint = closestIndex;
+                if (lastCheckpoint === -1 && closestIndex < buffer) lastCheckpoint = 0;
             }
-            if (lastCheckpoint === -1 && closestIndex < buffer) lastCheckpoint = 0;
         }
 
         function updateHUD() {
@@ -837,7 +948,23 @@
             damageBarEl.style.width = playerDamage + '%';
             wearBarEl.style.width = playerTireWear + '%';
 
-            grassWarningEl.style.display = onGrass ? 'block' : 'none';
+            if (car) {
+                coordsEl.innerText = `X:${car.position.x.toFixed(1)} Y:${car.position.y.toFixed(1)} Z:${car.position.z.toFixed(1)}`;
+            }
+
+            if (onGrass) {
+                grassWarningEl.style.display = 'block';
+                grassWarningEl.innerText = "OFF TRACK!";
+                grassWarningEl.style.color = "#ff3333";
+                grassWarningEl.style.borderColor = "red";
+            } else if (inPitLane) {
+                grassWarningEl.style.display = 'block';
+                grassWarningEl.innerText = "PIT LANE - REPAIRING";
+                grassWarningEl.style.color = "#ffff00";
+                grassWarningEl.style.borderColor = "yellow";
+            } else {
+                grassWarningEl.style.display = 'none';
+            }
         }
 
         function updateCamera() {
@@ -862,6 +989,7 @@
                 for (let i = 1; i < trackPoints2D.length; i++) mapCtx.lineTo(pad + trackPoints2D[i].x * w, pad + trackPoints2D[i].y * h);
                 mapCtx.lineTo(pad + trackPoints2D[0].x * w, pad + trackPoints2D[0].y * h);
                 mapCtx.stroke();
+
                 const bounds = trackPoints2D[0].bounds;
                 aiCars.forEach(ai => {
                     const aiNX = (ai.mesh.position.x - bounds.minX) / (bounds.maxX - bounds.minX);
