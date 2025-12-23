@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grand Lexicon Quiz</title>
+    <style>
+        :root {
+            --bg-color: #f4f1ea;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #d35400;
+            --success: #27ae60;
+            --error: #c0392b;
+            --text: #333;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            border-radius: 2px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+            position: relative;
+        }
+
+        .game-card::before {
+            content: "";
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 1px solid #eee;
+            pointer-events: none;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #777;
+            margin-bottom: 30px;
+        }
+
+        .score-container {
+            text-align: right;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        #word-display {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary);
+            font-style: italic;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option-btn {
+            background: none;
+            border: 2px solid #eee;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            font-family: 'Georgia', serif;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            line-height: 1.4;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            background-color: #fdfdfd;
+            border-color: var(--primary);
+        }
+
+        .option-btn.correct {
+            background-color: var(--success) !important;
+            color: white;
+            border-color: var(--success);
+        }
+
+        .option-btn.wrong {
+            background-color: var(--error) !important;
+            color: white;
+            border-color: var(--error);
+        }
+
+        #controls {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .next-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: none;
+        }
+
+        .next-btn:hover {
+            background: var(--accent);
+        }
+
+        #feedback {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+            min-height: 1.2em;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #eee;
+            margin-bottom: 20px;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="game-card">
+        <h1>The Obscure Dictionary</h1>
+        <div class="progress-bar">
+            <div id="progress-fill"></div>
+        </div>
+        <div class="score-container">Score: <span id="score">0</span></div>
+
+        <div id="word-display">...</div>
+
+        <div class="options-list" id="options">
+        </div>
+
+        <div id="feedback"></div>
+
+        <div id="controls">
+            <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next Word</button>
+        </div>
+    </div>
+
+    <script>
+        // MASSIVE DICTIONARY LIST
+        const dictionary = [
+            { w: "Abecedarian", d: "A person who is just beginning to learn something; a novice." },
+            { w: "Blandiloquence", d: "Flattering or complimentary speech used to persuade someone." },
+            { w: "Cacodemonomania", d: "The pathological belief that one is possessed by an evil spirit." },
+            { w: "Dactylology", d: "The technique of communicating by signs made with the fingers." },
+            { w: "Ecdysiast", d: "A professional striptease performer (coined by H.L. Mencken)." },
+            { w: "Floccinaucinihilipilification", d: "The action or habit of estimating something as worthless." },
+            { w: "Gorgonize", d: "To have a paralyzing or mesmerizing effect on someone." },
+            { w: "Hamartia", d: "A fatal flaw leading to the downfall of a tragic hero." },
+            { w: "Inaniloquent", d: "Pertaining to idle or empty talk; babbling." },
+            { w: "Jentacular", d: "Pertaining to a breakfast taken early in the morning." },
+            { w: "Kakistocracy", d: "A system of government which is run by the worst or least qualified citizens." },
+            { w: "Lethologica", d: "The inability to remember a particular word or name." },
+            { w: "Mumpsimus", d: "A traditional custom or notion adhered to although it has been shown to be unreasonable." },
+            { w: "Nudiustertian", d: "Of or relating to the day before yesterday." },
+            { w: "Opsimath", d: "A person who begins to learn or study only late in life." },
+            { w: "Pogonotrophy", d: "The act of cultivating or growing a beard." },
+            { w: "Quire", d: "A set of 24 or 25 sheets of paper of the same size and stock." },
+            { w: "Recalcitrant", d: "Having an obstinately uncooperative attitude toward authority." },
+            { w: "Sialoquent", d: "Spitting or spraying saliva while speaking." },
+            { w: "Tarantism", d: "A psychological illness characterized by an extreme impulse to dance." },
+            { w: "Ultracrepidarian", d: "Expressing opinions on matters outside the scope of one's knowledge." },
+            { w: "Velleity", d: "A mere wish or inclination not strong enough to lead to action." },
+            { w: "Williwaw", d: "A sudden blast of wind descending from a mountainous coast to the sea." },
+            { w: "Xerophagy", d: "The eating of dry food, especially as a form of fasting." },
+            { w: "Yarborough", d: "A hand of cards with no card above a nine." },
+            { w: "Zarf", d: "A cardboard or metal holder for a hot coffee cup." },
+            { w: "Agelast", d: "A person who never laughs; a joyless individual." },
+            { w: "Bibliolept", d: "One who steals books." },
+            { w: "Crepuscular", d: "Of, resembling, or relating to twilight." },
+            { w: "Defenestration", d: "The act of throwing someone or something out of a window." },
+            { w: "Erinaceous", d: "Like or relating to a hedgehog." },
+            { w: "Fubsy", d: "Short and stout; squat." },
+            { w: "Glabrous", d: "Free from hair or down; smooth." },
+            { w: "Hippopotomonstrosesquippedaliophobia", d: "The phobia or fear of long words." },
+            { w: "Illyngophobia", d: "The fear of vertigo or feeling dizzy." },
+            { w: "Jollux", d: "A slang term for a fat person." },
+            { w: "Ktenology", d: "The science of putting people to death." },
+            { w: "Logomachy", d: "An argument about words or a battle of words." },
+            { w: "Macrosmatic", d: "Having a good sense of smell." },
+            { w: "Noctivagant", d: "Wandering or going about in the night." },
+            { w: "Oxter", d: "A person's armpit." },
+            { w: "Petrichor", d: "A pleasant smell that frequently accompanies the first rain after a long period of warm, dry weather." },
+            { w: "Quincunx", d: "An arrangement of five objects with one at each corner and one in the middle." },
+            { w: "Ratoon", d: "A new shoot or sprout growing from the base of a cropped plant." },
+            { w: "Steatopygic", d: "Characterized by a heavy deposit of fat in the buttocks." },
+            { w: "Tergiversation", d: "Evasion of straightforward action or clear-cut statement; equivocation." },
+            { w: "Ulotrichous", d: "Having woolly or curly hair." },
+            { w: "Valetudinarian", d: "A person who is unduly anxious about their health." },
+            { w: "Whippersnapper", d: "A young and inexperienced person considered to be presumptuous or overconfident." },
+            { w: "Xylophilous", d: "Fond of wood; living in or on wood." },
+            { w: "Yoke-fellow", d: "A person connected with another in a task; a partner." },
+            { w: "Zugzwang", d: "A situation in which the obligation to make a move in a game causes the player to lose." },
+            { w: "Aporia", d: "An irresolvable internal contradiction or logical disjunction." },
+            { w: "Bathykolpian", d: "Deep-bosomed; having a deep cleavage." },
+            { w: "Callipygian", d: "Having well-shaped buttocks." },
+            { w: "Dowsabel", d: "A sweetheart; a lady-love." },
+            { w: "Epeolatry", d: "The worship of words." },
+            { w: "Funambulist", d: "A tightrope walker." },
+            { w: "Gnomon", d: "The part of a sundial that casts a shadow." },
+            { w: "Heliolatry", d: "The worship of the sun." },
+            { w: "Incondite", d: "Badly put together; crude; unpolished." },
+            { w: "Jejune", d: "Naive, simplistic, and superficial." },
+            { w: "Kyphosis", d: "Excessive outward curvature of the spine, causing hunching of the back." },
+            { w: "Limicolous", d: "Living in mud." },
+            { w: "Matutinal", d: "Of or occurring in the morning." },
+            { w: "Nefarious", d: "Wicked or criminal." },
+            { w: "Otiose", d: "Serving no practical purpose or result." },
+            { w: "Pauciloquent", d: "Uttering few words; brief in speech." },
+            { w: "Quixotic", d: "Exceedingly idealistic; unrealistic and impractical." },
+            { w: "Runcinate", d: "Having leaves with saw-toothed edges pointing toward the base." },
+            { w: "Sternutatory", d: "Causing or tending to cause sneezing." },
+            { w: "Tiffin", d: "A light meal, especially one taken at midday." },
+            { w: "Uuberty", d: "Fruitfulness; abundance; fertility." },
+            { w: "Vulpine", d: "Of or relating to a fox or foxes." },
+            { w: "Winsome", d: "Attractive or appealing in appearance or character." },
+            { w: "Xenoglossy", d: "The ability to speak a language without having learned it." },
+            { w: "Yeuk", d: "To itch." },
+            { w: "Zonule", d: "A small zone; a tiny band or girdle." },
+            { w: "Alcedine", d: "Of or relating to kingfishers." },
+            { w: "Borborygmus", d: "A rumbling or gurgling noise made by the movement of fluid and gas in the intestines." },
+            { w: "Catachresis", d: "The use of a word in a way that is not correct." },
+            { w: "Dandiprat", d: "An insignificant or young person; a dwarf." },
+            { w: "Exuviate", d: "To shed a skin or shell." },
+            { w: "Foudroyant", d: "Sudden and overwhelming in effect." },
+            { w: "Garrulous", d: "Excessively talkative, especially on trivial matters." },
+            { w: "Horology", d: "The study and measurement of time." },
+            { w: "Ignivomous", d: "Vomiting or spitting fire." },
+            { w: "Jeremiad", d: "A long, mournful complaint or lamentation." },
+            { w: "Knavery", d: "Unprincipled, untrustworthy, or dishonest dealing." },
+            { w: "Lambent", d: "Gently glowing or flickering without burning." },
+            { w: "Mellifluous", d: "Sweet or musical; pleasant to hear." },
+            { w: "Noegenesis", d: "The production of new knowledge from sensory perception." },
+            { w: "Obnubilate", d: "To darken, dim, or cloud over." },
+            { w: "Pavonine", d: "Of or like a peacock." },
+            { w: "Qualm", d: "An uneasy feeling of doubt, worry, or fear." },
+            { w: "Rident", d: "Laughing; smiling; cheerful." },
+            { w: "Suscitate", d: "To rouse, excite, or stir up." },
+            { w: "Tergiversate", d: "To change repeatedly one's attitude or opinions." },
+            { w: "Usufruct", d: "The right to enjoy the use and advantages of another's property." },
+            { w: "Veridical", d: "Truthful; coinciding with reality." },
+            // --- EXTENDED LIST BELOW ---
+            { w: "Weltanschauung", d: "A particular philosophy of life or conception of the world; a comprehensive worldview." },
+            { w: "Xanthosis", d: "A yellowish discoloration of the skin, often caused by the ingestion of excess carotene." },
+            { w: "Yepsen", d: "The amount that can be held in two hands cupped together; a double handful." },
+            { w: "Ziggurat", d: "A rectangular stepped tower, sometimes surmounted by a temple, found in ancient Mesopotamia." },
+            { w: "Abnegation", d: "The act of renouncing or rejecting something, typically a right, possession, or belief." },
+            { w: "Bloviate", d: "To talk at length in a pompous, arrogant, or boastful manner without saying anything of substance." },
+            { w: "Cachinnate", d: "To laugh loudly and immoderately, often in a way that is harsh or disturbing." },
+            { w: "Denouement", d: "The final part of a play, movie, or narrative in which the strands of the plot are drawn together." },
+            { w: "Effulgent", d: "Shining brightly; radiant; emanating a brilliant or glowing quality." },
+            { w: "Facetious", d: "Treating serious issues with deliberately inappropriate humor; flippant." },
+            { w: "Grandiloquent", d: "Pompous or extravagant in language, style, or manner, especially intended to impress." },
+            { w: "Histrionic", d: "Overly theatrical or melodramatic in character or style; exaggerated dramatic behavior." },
+            { w: "Ineffable", d: "Too great or extreme to be expressed or described in words; unspeakable." },
+            { w: "Juggernaut", d: "A huge, powerful, and overwhelming force or institution that is unstoppable." },
+            { w: "Kowtow", d: "To act in an excessively subservient manner; originally a Chinese custom of kneeling and touching the ground." },
+            { w: "Loquacious", d: "Tending to talk a great deal; talkative; characterized by excessive wordiness." },
+            { w: "Magnanimous", d: "Very generous or forgiving, especially toward a rival or someone less powerful than oneself." },
+            { w: "Nocturnal", d: "Done, occurring, or active at night; relating to the darkness of the evening." },
+            { w: "Obdurate", d: "Stubbornly refusing to change one's opinion or course of action; unmoved by persuasion." },
+            { w: "Perspicacious", d: "Having a ready insight into and understanding of things; mentally acute or shrewd." },
+            { w: "Quiescent", d: "In a state or period of inactivity or dormancy; quiet and motionless." },
+            { w: "Reticent", d: "Not revealing one's thoughts or feelings readily; reserved or silent." },
+            { w: "Salubrious", d: "Health-giving; healthy; referring to a place or climate that is pleasant and conducive to well-being." },
+            { w: "Trepidation", d: "A feeling of fear or agitation about something that may happen; trembling uncertainty." },
+            { w: "Unctuous", d: "Excessively or ingratiatingly flattering; having a greasy or soapy feel; oily." },
+            { w: "Vacillate", d: "To waver between different opinions or actions; to be indecisive in one's choices." },
+            { w: "Weltschmerz", d: "A feeling of melancholy and world-weariness caused by comparing the actual state of the world with an ideal state." },
+            { w: "Xenophile", d: "An individual who is attracted to foreign people, manners, or cultures; the opposite of a xenophobe." },
+            { w: "Yammer", d: "To talk loudly and persistently, often in a complaining or annoying way." },
+            { w: "Zealot", d: "A person who is fanatical and uncompromising in pursuit of their religious, political, or other ideals." },
+            { w: "Accoutrement", d: "Additional items of dress or equipment, or other items carried or worn by a person for a specific task." },
+            { w: "Bellicose", d: "Demonstrating aggression and willingness to fight; eager for war or conflict." },
+            { w: "Convivial", d: "Friendly, lively, and enjoyable; relating to an atmosphere of good company and feasting." },
+            { w: "Diaphanous", d: "Light, delicate, and translucent; especially used to describe fabric or wings." },
+            { w: "Ennui", d: "A feeling of listlessness and dissatisfaction arising from a lack of occupation or excitement; profound boredom." },
+            { w: "Fastidious", d: "Very attentive to and concerned about accuracy and detail; very concerned about matters of cleanliness." },
+            { w: "Gregarious", d: "Fond of company; sociable; tending to associate with others of one's kind." },
+            { w: "Hubris", d: "Excessive pride or self-confidence; in Greek tragedy, the flaw that leads to a hero's downfall." },
+            { w: "Incipient", d: "In an initial stage; beginning to happen or develop; just starting to emerge." },
+            { w: "Jactitation", d: "A restless tossing of the body in illness; or a false boast of being married to someone." },
+            { w: "Kenspeckle", d: "Easily recognizable or conspicuous; something that stands out from its surroundings." },
+            { w: "Languor", d: "The state or feeling, often pleasant, of tiredness or inertia; a relaxed stillness." },
+            { w: "Mendacious", d: "Not telling the truth; lying; characterized by habitual deception." },
+            { w: "Nascent", d: "Just coming into existence and beginning to display signs of future potential." },
+            { w: "Obsequious", d: "Obedient or attentive to an excessive or servile degree; fawning." },
+            { w: "Penultimate", d: "Last but one in a series of things; second to the last." },
+            { w: "Querulous", d: "Complaining in a petulant or whining manner; characterized by a fretful tone." },
+            { w: "Redolent", d: "Strongly reminiscent or suggestive of something; fragrant or sweet-smelling." },
+            { w: "Surreptitious", d: "Kept secret, especially because it would not be approved of; clandestine." },
+            { w: "Tintinnabulation", d: "A ringing or tinkling sound, especially the sound produced by the ringing of bells." }
+        ];
+
+        let score = 0;
+        let totalAnswered = 0;
+        let currentCorrectDef = "";
+
+        const wordDisplay = document.getElementById('word-display');
+        const optionsContainer = document.getElementById('options');
+        const scoreDisplay = document.getElementById('score');
+        const nextBtn = document.getElementById('next-btn');
+        const feedback = document.getElementById('feedback');
+        const progressFill = document.getElementById('progress-fill');
+
+        function initGame() {
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            // Reset UI
+            feedback.innerText = "";
+            nextBtn.style.display = "none";
+            optionsContainer.innerHTML = "";
+
+            // Get random word
+            const randomIndex = Math.floor(Math.random() * dictionary.length);
+            const questionEntry = dictionary[randomIndex];
+            currentCorrectDef = questionEntry.d;
+
+            wordDisplay.innerText = questionEntry.w;
+
+            // Generate distractors
+            let options = [questionEntry.d];
+            while (options.length < 3) {
+                let randomDef = dictionary[Math.floor(Math.random() * dictionary.length)].d;
+                if (!options.includes(randomDef)) {
+                    options.push(randomDef);
+                }
+            }
+
+            // Shuffle options
+            options.sort(() => Math.random() - 0.5);
+
+            // Create buttons
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(btn, opt);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(btn, selectedDef) {
+            totalAnswered++;
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.disabled = true);
+
+            if (selectedDef === currentCorrectDef) {
+                btn.classList.add('correct');
+                score++;
+                feedback.innerText = "Excellent! That is correct.";
+                feedback.style.color = "var(--success)";
+            } else {
+                btn.classList.add('wrong');
+                feedback.innerText = "Alas, that is incorrect.";
+                feedback.style.color = "var(--error)";
+
+                // Highlight correct one
+                allBtns.forEach(b => {
+                    if (b.innerText === currentCorrectDef) b.classList.add('correct');
+                });
+            }
+
+            scoreDisplay.innerText = score;
+            nextBtn.style.display = "inline-block";
+
+            // Progress bar logic (up to 20 for example)
+            let progress = (totalAnswered / 20) * 100;
+            progressFill.style.width = Math.min(progress, 100) + "%";
+        }
+
+        initGame();
+    </script>
+</body>
+
+</html>
